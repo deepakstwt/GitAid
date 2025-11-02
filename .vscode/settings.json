@@ -1,0 +1,72 @@
+{
+  "files.associations": {
+    "*.tsx": "typescriptreact",
+    "*.ts": "typescript"
+  },
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "typescript.enablePromptUseWorkspaceTsdk": true,
+  
+  // File nesting for better organization
+  "explorer.fileNesting.enabled": true,
+  "explorer.fileNesting.patterns": {
+    "*.ts": "${capture}.test.ts, ${capture}.spec.ts",
+    "*.tsx": "${capture}.test.tsx, ${capture}.spec.tsx, ${capture}.stories.tsx",
+    "package.json": "package-lock.json, yarn.lock, pnpm-lock.yaml",
+    "tailwind.config.*": "postcss.config.*",
+    "tsconfig.json": "tsconfig.*.json",
+    ".env": ".env.*",
+    "README.md": "CHANGELOG.md, LICENSE, CONTRIBUTING.md"
+  },
+  
+  // Folder colors for better visual organization
+  "workbench.colorCustomizations": {
+    "activityBar.background": "#0a0a0a",
+    "activityBar.foreground": "#ffffff"
+  },
+  
+  // Recommendations
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/.next": true,
+    "**/dist": true,
+    "**/.git": true
+  },
+  
+  "files.exclude": {
+    "**/.next": true,
+    "**/node_modules": true
+  },
+  
+  // Tailwind CSS IntelliSense
+  "tailwindCSS.experimental.classRegex": [
+    ["cva\\(([^)]*)\\)", "[\"'`]([^\"'`]*).*?[\"'`]"],
+    ["cn\\(([^)]*)\\)", "[\"'`]([^\"'`]*).*?[\"'`]"]
+  ],
+  
+  // Format on save
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  
+  // File comments for better navigation
+  "better-comments.tags": [
+    {
+      "tag": "FRONTEND",
+      "color": "#3B82F6",
+      "strikethrough": false,
+      "backgroundColor": "transparent"
+    },
+    {
+      "tag": "BACKEND",
+      "color": "#10B981",
+      "strikethrough": false,
+      "backgroundColor": "transparent"
+    },
+    {
+      "tag": "SHARED",
+      "color": "#F59E0B",
+      "strikethrough": false,
+      "backgroundColor": "transparent"
+    }
+  ]
+}
+

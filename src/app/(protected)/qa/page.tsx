@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { format, formatDistanceToNow } from "date-fns";
 import { AskQuestionCardInline } from "@/components/AskQuestionCardInline";
-import { CodeReferences } from "@/components/CodeReferences";
+import { CodeReferences } from "@/components/CodeReferencesSimple";
 import useProject from "@/hooks/use-project";
 import { api } from "@/trpc/react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -261,7 +261,7 @@ const QAPage = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           {/* Overlay */}
           <div
-            className={`fixed inset-0 bg-black/70 backdrop-blur-sm transition-all duration-300 ease-in-out ${
+            className={`fixed inset-0 bg-black/80 backdrop-blur-md transition-all duration-300 ease-in-out ${
               isDialogOpen ? "opacity-100" : "opacity-0 pointer-events-none"
             }`}
             onClick={handleDialogClose}
@@ -278,93 +278,98 @@ const QAPage = () => {
             aria-labelledby="question-detail-title"
             ref={modalRef}
           >
-            <div className="bg-card text-card-foreground rounded-xl shadow-2xl w-full max-w-6xl h-[90vh] flex flex-col overflow-hidden border border-border transition-all duration-300 ease-in-out">
+            <div className="bg-gradient-to-br from-gray-900/95 to-black/95 backdrop-blur-xl text-white rounded-2xl shadow-2xl w-full max-w-7xl max-h-[92vh] flex flex-col overflow-hidden border border-white/10 transition-all duration-300 ease-in-out">
               {/* Header */}
-              <div className="bg-gradient-to-r from-[hsl(var(--primary)/0.08)] via-[hsl(var(--secondary)/0.08)] to-[hsl(var(--accent)/0.10)] p-6 border-b border-border relative">
+              <div className="bg-gradient-to-r from-gray-900/90 via-gray-800/90 to-gray-900/90 backdrop-blur-sm p-8 border-b border-white/10 relative">
                 <button
                   onClick={handleDialogClose}
-                  className="absolute right-4 top-4 p-2 rounded-full bg-card/90 text-muted-foreground transition-colors shadow-md focus:outline-none focus:ring-2 focus:ring-primary"
+                  className="absolute right-6 top-6 p-2 rounded-full bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-all duration-200 shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500/50"
                   aria-label="Close dialog"
                   ref={closeButtonRef}
                 >
                   <XIcon className="h-5 w-5" />
                 </button>
 
-                <h2 id="question-detail-title" className="text-2xl font-bold text-foreground mb-4 pr-10 leading-tight">
+                <h2 id="question-detail-title" className="text-3xl font-bold text-white mb-6 pr-12 leading-tight">
                   {selectedQuestion.text}
                 </h2>
 
-                <div className="flex items-center gap-3 text-sm">
+                <div className="flex items-center gap-4">
                   {selectedQuestion.user.imageUrl ? (
                     <img
                       src={selectedQuestion.user.imageUrl}
                       alt="User avatar"
-                      className="w-8 h-8 rounded-full ring-2 ring-white/50 shadow-md"
+                      className="w-10 h-10 rounded-full ring-2 ring-blue-500/30 shadow-lg"
                     />
                   ) : (
-                    <div className="w-8 h-8 bg-gradient-to-br from-[hsl(var(--primary))] to-[hsl(var(--primary)/0.85)] rounded-full flex items-center justify-center shadow-md">
-                      <User className="h-4 w-4 text-white" />
+                    <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-full flex items-center justify-center shadow-lg">
+                      <User className="h-5 w-5 text-white" />
                     </div>
                   )}
-                  <span className="font-semibold text-foreground">
-                    {selectedQuestion.user.firstName && selectedQuestion.user.lastName
-                      ? `${selectedQuestion.user.firstName} ${selectedQuestion.user.lastName}`
-                      : selectedQuestion.user.emailAddress}
-                  </span>
-                  <span className="text-muted-foreground">•</span>
-                  <span className="text-muted-foreground font-medium">
-                    {format(new Date(selectedQuestion.createdAt), "PPp")}
-                  </span>
+                  <div className="flex flex-col">
+                    <span className="font-semibold text-white text-base">
+                      {selectedQuestion.user.firstName && selectedQuestion.user.lastName
+                        ? `${selectedQuestion.user.firstName} ${selectedQuestion.user.lastName}`
+                        : selectedQuestion.user.emailAddress}
+                    </span>
+                    <span className="text-gray-400 text-sm">
+                      {format(new Date(selectedQuestion.createdAt), "PPp")}
+                    </span>
+                  </div>
                 </div>
               </div>
 
               {/* Content Area with Scrolling */}
-              <div className="flex-1 overflow-hidden bg-gradient-to-br from-[hsl(var(--background))] via-[hsl(var(--muted))] to-[hsl(var(--background))]">
+              <div className="flex-1 overflow-hidden bg-gradient-to-br from-gray-900/50 to-black/50">
                 <div
-                  className={`grid ${isMobile ? "grid-cols-1" : "grid-cols-1 lg:grid-cols-2"} gap-4 sm:gap-6 p-4 sm:p-6 md:p-8 h-full overflow-y-auto custom-scrollbar max-h-[calc(90vh-120px)] transition-all duration-300`}
+                  className={`grid ${isMobile ? "grid-cols-1" : selectedQuestion.fileReferences && selectedQuestion.fileReferences.length > 0 ? "grid-cols-5" : "grid-cols-1"} gap-6 p-8 h-full overflow-y-auto custom-scrollbar transition-all duration-300`}
+                  style={{ maxHeight: 'calc(92vh - 180px)' }}
                 >
-                  {/* Answer Section - Left Side */}
-                  <div className="flex flex-col h-full">
-                    <div className="flex items-center gap-4 mb-4 sticky top-0 bg-gradient-to-r from-[hsl(var(--background))] to-[hsl(var(--muted))] py-2 z-10">
-                      <div className="p-2.5 bg-gradient-to-br from-[hsl(var(--primary))] to-[hsl(var(--primary)/0.85)] rounded-xl shadow-lg">
+                  {/* Answer Section - Left Side (3/5 width) */}
+                  <div className={`flex flex-col ${selectedQuestion.fileReferences && selectedQuestion.fileReferences.length > 0 ? "col-span-3" : "col-span-1"}`}>
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="p-2 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg shadow-lg">
                         <MessageSquare className="h-5 w-5 text-white" />
                       </div>
                       <div>
-                        <h3 className="text-lg font-bold text-foreground">AI Answer</h3>
-                        <p className="text-xs text-muted-foreground">Generated response with relevant insights</p>
+                        <h3 className="text-lg font-bold text-white">Answer</h3>
+                        <p className="text-xs text-gray-400">AI-generated response</p>
                       </div>
                     </div>
 
-                    <div className="flex-1 bg-card border border-border rounded-xl shadow-lg overflow-hidden">
-                      <div className="h-full overflow-auto p-4 sm:p-6 custom-scrollbar max-h-[calc(90vh-250px)]">
-                        <div className="prose prose-base max-w-none prose-headings:text-foreground prose-p:text-foreground/80 prose-strong:text-foreground prose-pre:overflow-x-auto">
+                    <div className="flex-1 bg-gray-900/60 backdrop-blur-sm border border-white/10 rounded-xl shadow-xl overflow-hidden">
+                      <div className="h-full overflow-auto p-6 custom-scrollbar">
+                        <div 
+                          className="prose prose-invert prose-base max-w-none prose-headings:text-white prose-p:text-gray-200 prose-strong:text-white prose-code:text-blue-300 prose-pre:bg-black/40 prose-pre:border prose-pre:border-white/10 prose-a:text-blue-400 prose-li:text-gray-200"
+                          data-color-mode="dark"
+                        >
                           <MDEditor.Markdown source={selectedQuestion.answer} />
                         </div>
                       </div>
                     </div>
                   </div>
 
-                  {/* File References Section - Right Side */}
+                  {/* File References Section - Right Side (2/5 width) */}
                   {selectedQuestion.fileReferences &&
                   Array.isArray(selectedQuestion.fileReferences) &&
                   selectedQuestion.fileReferences.length > 0 ? (
-                    <div className="flex flex-col h-full">
-                      <div className="flex items-center gap-4 mb-4 sticky top-0 bg-gradient-to-r from-[hsl(var(--background))] to-[hsl(var(--muted))] py-2 z-10">
-                        <div className="p-2.5 bg-gradient-to-br from-[hsl(var(--accent))] to-[hsl(var(--primary))] rounded-xl shadow-lg">
+                    <div className="flex flex-col col-span-2">
+                      <div className="flex items-center gap-3 mb-4">
+                        <div className="p-2 bg-gradient-to-br from-purple-600 to-pink-600 rounded-lg shadow-lg">
                           <svg className="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                           </svg>
                         </div>
                         <div>
-                          <h3 className="text-lg font-bold text-foreground">
-                            Referenced Files ({selectedQuestion.fileReferences.length})
+                          <h3 className="text-lg font-bold text-white">
+                            References ({selectedQuestion.fileReferences.length})
                           </h3>
-                          <p className="text-xs text-muted-foreground">Source code files with similarity scores</p>
+                          <p className="text-xs text-gray-400">Source files with similarity</p>
                         </div>
                       </div>
 
-                      <div className="flex-1 bg-card border border-border rounded-xl shadow-lg overflow-hidden">
-                        <div className="h-full overflow-auto p-4 sm:p-6 custom-scrollbar max-h-[calc(90vh-250px)]">
+                      <div className="flex-1 bg-gray-900/60 backdrop-blur-sm border border-white/10 rounded-xl shadow-xl overflow-hidden">
+                        <div className="h-full overflow-auto p-4 custom-scrollbar">
                           <CodeReferences fileReferences={selectedQuestion.fileReferences as unknown as FileReference[]} />
                         </div>
                       </div>

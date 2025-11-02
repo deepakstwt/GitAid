@@ -1,0 +1,92 @@
+/* Performance Optimizations */
+
+/* Prevent layout shift during font load */
+@supports (font-display: swap) {
+  * {
+    font-display: swap;
+  }
+}
+
+/* Optimize rendering with CSS containment */
+.layout-container {
+  contain: layout style;
+}
+
+/* Prevent repaints during animations */
+.animated-element {
+  will-change: transform;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  perspective: 1000px;
+}
+
+/* Optimize scrolling performance */
+.scroll-container {
+  contain: layout style paint;
+  will-change: scroll-position;
+}
+
+/* Reduce paint complexity */
+.gradient-background {
+  contain: paint;
+  will-change: background-position;
+}
+
+/* Optimize text rendering */
+.text-optimized {
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Prevent FOUC (Flash of Unstyled Content) */
+html {
+  background-color: #000000 !important;
+  color: #FFFFFF !important;
+}
+
+/* Skeleton loading animation - optimized */
+@keyframes skeleton-loading {
+  0% {
+    background-position: -200px 0;
+  }
+  100% {
+    background-position: calc(200px + 100%) 0;
+  }
+}
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.05) 0%,
+    rgba(255, 255, 255, 0.1) 50%,
+    rgba(255, 255, 255, 0.05) 100%
+  );
+  background-size: 200px 100%;
+  animation: skeleton-loading 1.5s ease-in-out infinite;
+  border-radius: 4px;
+}
+
+/* Reduce animation cost on mobile */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* GPU acceleration for transforms */
+.gpu-accelerated {
+  transform: translateZ(0);
+  will-change: transform;
+}
+
+/* Content visibility for off-screen elements */
+.off-screen {
+  content-visibility: auto;
+  contain-intrinsic-size: 200px;
+}
+

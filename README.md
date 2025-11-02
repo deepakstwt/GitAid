@@ -29,6 +29,22 @@
 
 ---
 
+## 📚 Documentation & Project Structure
+
+**New to the project?** Check out these guides:
+
+- 📁 **[PROJECT_STRUCTURE.md](PROJECT_STRUCTURE.md)** - Complete architecture overview and tech stack details
+- 📝 **[CURRENT_STRUCTURE.txt](CURRENT_STRUCTURE.txt)** - Quick reference for file organization  
+- 🎨 **[Components Guide](src/components/README.md)** - Frontend components documentation
+- 🔧 **[Server Guide](src/server/README.md)** - Backend API and tRPC documentation
+
+**Key Concepts:**
+- **Frontend**: `src/app/` (pages), `src/components/` (React components)
+- **Backend**: `src/server/` (API logic), `prisma/` (database)
+- **Shared**: `src/trpc/` (type-safe API), `src/hooks/` (React hooks)
+
+---
+
 ## ✨ Features
 
 ### 🤖 **AI-Powered Commit Analysis**

@@ -19,6 +19,7 @@ model User {
   emailAddress   String          @unique
   questions      Question[]
   UserToProjects UserToProject[]
+  meetings       Meeting[]
 }
 
 model Project {
@@ -39,6 +40,7 @@ model Project {
   questions            Question[]
   sourceCodeEmbeddings SourceCodeEmbedding[]
   UserToProjects       UserToProject[]
+  meetings             Meeting[]
 }
 
 model UserToProject {
@@ -156,4 +158,28 @@ model ProjectMember {
   @@unique([projectId, email])
   @@index([email])
   @@index([projectId])
+}
+
+enum MeetingStatus {
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+model Meeting {
+  id            String        @id @default(cuid())
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  name          String
+  audioUrl      String
+  transcription String?
+  summary       String?
+  status        MeetingStatus @default(PROCESSING)
+  projectId     String
+  userId        String
+  project       Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@index([userId])
 }
