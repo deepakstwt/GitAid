@@ -159,13 +159,27 @@ export async function getMeetings(projectId: string) {
         audioUrl: true,
         transcription: true,
         summary: true,
+        status: true,
         createdAt: true,
       },
     });
 
-    return { success: true, meetings };
+    // Ensure status is valid, default to PROCESSING if not
+    const normalizedMeetings = meetings.map(meeting => ({
+      ...meeting,
+      status: (meeting.status === 'PROCESSING' || meeting.status === 'COMPLETED' || meeting.status === 'FAILED') 
+        ? meeting.status 
+        : 'PROCESSING' as const
+    }));
+
+    return { success: true, meetings: normalizedMeetings };
   } catch (error) {
     console.error('Error fetching meetings:', error);
-    return { success: false, error: 'Failed to fetch meetings. Please try again.' };
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    console.error('Detailed error:', errorMessage);
+    return { 
+      success: false, 
+      error: `Failed to fetch meetings: ${errorMessage}` 
+    };
   }
 }

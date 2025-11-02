@@ -10,10 +10,50 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
-import RepositoryLoader from "@/components/repository-loader";
-import { EnhancedRAGComponent } from "@/components/enhanced-rag";
-import CommitIntelligenceDashboard from "@/components/CommitIntelligenceDashboard";
-import { AICodeAssistantCard } from "@/components/AICodeAssistantCard";
+import dynamic from 'next/dynamic';
+
+// Lazy load heavy components to improve initial page load
+const RepositoryLoader = dynamic(() => import("@/components/repository-loader"), {
+  loading: () => (
+    <div className="animate-pulse space-y-4">
+      <div className="h-6 bg-white/5 rounded w-32" />
+      <div className="h-12 bg-white/5 rounded w-full" />
+      <div className="h-24 bg-white/5 rounded w-full" />
+    </div>
+  ),
+  ssr: false,
+});
+
+const CommitIntelligenceDashboard = dynamic(() => import("@/components/CommitIntelligenceDashboard"), {
+  loading: () => (
+    <div className="animate-pulse space-y-4">
+      <div className="h-8 bg-white/5 rounded w-48" />
+      <div className="h-32 bg-white/5 rounded w-full" />
+      <div className="grid grid-cols-4 gap-4">
+        {[...Array(4)].map((_, i) => (
+          <div key={i} className="h-24 bg-white/5 rounded" />
+        ))}
+      </div>
+    </div>
+  ),
+  ssr: false,
+});
+
+const AICodeAssistantCard = dynamic(
+  () => import("@/components/AICodeAssistantCard").then((mod) => ({
+    default: mod.AICodeAssistantCard,
+  })),
+  {
+    loading: () => (
+      <div className="animate-pulse space-y-4">
+        <div className="h-6 bg-white/5 rounded w-40" />
+        <div className="h-32 bg-white/5 rounded w-full" />
+      </div>
+    ),
+    ssr: false,
+  }
+);
+
 import { 
   RefreshCcw, 
   ExternalLink, 
@@ -41,6 +81,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { api } from '@/trpc/react';
 import { toast } from 'sonner';
+import { DashboardWelcome } from '@/components/DashboardWelcome';
 
 // CommitLog Component
 interface CommitLogProps {
@@ -546,23 +587,36 @@ const handleQuestionSaved = () => {
   }
 
   if (!project) {
+    // Show beautiful welcome screen for first-time users
+    if (projects?.length === 0) {
+      return <DashboardWelcome userName={user?.firstName || user?.username || undefined} />;
+    }
+    
+    // Show simple message to select a project
     return (
       <div className="container mx-auto py-8">
-        <Card>
-          <CardContent className="py-12 text-center">
-            <div className="text-muted-foreground">
-              <h3 className="text-lg font-medium mb-2">No Project Selected</h3>
-              <p className="text-sm mb-4">
-                {projects?.length === 0 
-                  ? "Create your first project to get started"
-                  : "Select a project from the sidebar to view its dashboard"
-                }
-              </p>
-              {projects?.length === 0 && (
-                <Link href="/create">
-                  <Button>Create Your First Project</Button>
-                </Link>
-              )}
+        <Card className="bg-gradient-to-br from-white/5 to-white/[0.02] border-white/10 backdrop-blur-sm">
+          <CardContent className="py-16 text-center">
+            <div className="max-w-md mx-auto space-y-6">
+              <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-blue-500/20 to-purple-500/20 flex items-center justify-center mx-auto">
+                <svg className="w-10 h-10 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                </svg>
+              </div>
+              
+              <div>
+                <h3 className="text-2xl font-bold text-white mb-2">No Project Selected</h3>
+                <p className="text-gray-400">
+                  Select a project from the sidebar to view its dashboard and start managing your code
+                </p>
+              </div>
+
+              <div className="flex items-center justify-center gap-2 text-sm text-gray-500">
+                <kbd className="px-2 py-1 bg-white/5 rounded border border-white/10">⌘</kbd>
+                <span>+</span>
+                <kbd className="px-2 py-1 bg-white/5 rounded border border-white/10">K</kbd>
+                <span className="ml-2">to quick search</span>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -1190,21 +1244,6 @@ const handleQuestionSaved = () => {
             </div>
           </div>
       </div>
-
-        {/* RAG Intelligence - Premium Full Width */}
-        <div className="w-full mt-12">
-          <div className="luxury-card">
-            <div className="relative overflow-hidden">
-              <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-primary/5 to-transparent" />
-              <div className="relative">
-        <EnhancedRAGComponent 
-          projectId={project.id} 
-          projectName={project.name}
-        />
-      </div>
-            </div>
-          </div>
-        </div>
       </div>
 
       {/* Modals */}

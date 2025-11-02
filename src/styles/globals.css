@@ -1,11 +1,21 @@
 @import "tailwindcss";
 @import "tw-animate-css";
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@300;400;500;600;700&display=swap');
+/* Font loading optimized via Next.js font optimization - no external imports needed */
 
-/* Enhanced Animations for GitAid */
+/* Enhanced Animations for GitAid - Optimized for performance */
 @keyframes grid-move {
   0% { transform: translate(0, 0); }
   100% { transform: translate(60px, 60px); }
+}
+
+/* Optimize animations with CSS containment and will-change for better performance */
+.floating,
+.floating-delayed,
+.floating-slow,
+.floating-slow-delayed {
+  contain: layout style paint;
+  will-change: transform;
+  transform: translateZ(0); /* Force GPU acceleration */
 }
 
 @keyframes floating-slow {
