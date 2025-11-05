@@ -16,7 +16,7 @@ import {
   MessageSquare,
   BarChart3
 } from "lucide-react";
-import Footer from './components/Footer';
+import Footer from '@/client/components/Footer';
 
 export default async function Home() {
   return (
