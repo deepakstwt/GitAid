@@ -22,10 +22,10 @@
 <div align="center">
 
 ### 🚀 Project Overview
-![Project Overview](public/screenshots/Project_Overview.jpeg)
+![Project Overview](./screenshots/Project_Overview.jpeg)
 
 ### 🎯 Dashboard  
-![Dashboard](public/screenshots/Dashboard.jpeg)
+![Dashboard](./screenshots/Dashboard.jpeg)
 
 ### 🤖 AI Code Assistant
 *Coming soon - Screenshot of AI-powered code analysis*
