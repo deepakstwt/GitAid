@@ -3,15 +3,15 @@ import { redirect } from 'next/navigation';
 import { db } from '@/server/db';
 
 export default async function SyncUserPage() {
-  try {
-    // Get authenticated user
-    const { userId } = await auth();
-    
-    if (!userId) {
-      // If not authenticated, redirect to sign-in
-      redirect('/sign-in');
-    }
+  // Get authenticated user
+  const { userId } = await auth();
+  
+  if (!userId) {
+    // If not authenticated, redirect to sign-in
+    redirect('/sign-in');
+  }
 
+  try {
     // Get user details from Clerk
     const client = await clerkClient();
     const clerkUser = await client.users.getUser(userId);
@@ -38,13 +38,14 @@ export default async function SyncUserPage() {
         lastName: clerkUser.lastName || null,
       },
     });
-
-    // Redirect to dashboard after successful sync
-    redirect('/dashboard');
   } catch (error) {
-    console.error('Error syncing user:', error);
-    // On error, still redirect to dashboard (user might already exist)
-    redirect('/dashboard');
+    // Log error but continue - user might already exist in DB
+    console.error('Error syncing user to database:', error);
+    // Don't throw - redirect will happen anyway
   }
+
+  // Always redirect to dashboard after sync attempt
+  // This redirect() call throws internally in Next.js 15, which is expected behavior
+  redirect('/dashboard');
 }
 
