@@ -19,22 +19,26 @@
 
 ## 📸 Screenshots
 
-### 🚀 **Project Overview**
-![Project Overview](/screenshots/project-overview.png)
+<div align="center">
 
-### 🎯 **Dashboard**
-![Dashboard](/screenshots/dashboard.png)
+### 🚀 Project Overview
+*Coming soon - Screenshot of the main landing page*
 
-### 🤖 **AI Code Assistant**
-![AI Assistant](/screenshots/ai-assistant.png)
+### 🎯 Dashboard  
+*Coming soon - Screenshot of the dashboard interface*
 
-### 📊 **Commit Intelligence**
-![Commit Intelligence](/screenshots/commit-intelligence.png)
+### 🤖 AI Code Assistant
+*Coming soon - Screenshot of AI-powered code analysis*
 
-### 👥 **Team Collaboration**
-![Team Collaboration](/screenshots/team-collaboration.png)
+### 📊 Commit Intelligence
+*Coming soon - Screenshot of commit analysis and insights*
 
-> **Note:** Screenshots can be added to the `public/screenshots/` directory and referenced using `/screenshots/filename.png`
+### 👥 Team Collaboration
+*Coming soon - Screenshot of team features and collaboration tools*
+
+</div>
+
+> **📝 Note:** Screenshots will be added to showcase the application features. To add screenshots, place image files in `public/screenshots/` and reference them in this section.
 
 ---
 
