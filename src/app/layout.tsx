@@ -1,13 +1,13 @@
-import "@/styles/globals.css";
-import "@/styles/optimizations.css";
+import "@/client/styles/globals.css";
+import "@/client/styles/optimizations.css";
 
 import { type Metadata } from "next";
 import { Geist, Inter } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
-import { Toaster } from "@/components/ui/sonner";
-import { cn } from "@/lib/utils";
-import { TRPCReactProvider } from "@/trpc/react";
-import { ThemeProvider } from "@/components/ThemeProvider";
+import { Toaster } from "@/client/components/ui/sonner";
+import { cn } from "@/client/lib/utils";
+import { TRPCReactProvider } from "@/client/trpc/react";
+import { ThemeProvider } from "@/client/components/ThemeProvider";
 import Script from "next/script";
 
 export const metadata: Metadata = {

@@ -19,13 +19,9 @@
 
 ## 📸 Screenshots
 
+Screenshots and visual documentation can be added to the `public/` directory for future reference.
 
-
-### 🚀 **Project Overview**
-![Project Overview](screenshots/Project.jpeg)
-
-
-
+> **Note:** Previous screenshots have been moved to keep the repository clean. New screenshots can be added to the `public/` directory.
 
 ---
 
@@ -33,15 +29,13 @@
 
 **New to the project?** Check out these guides:
 
-- 📁 **[PROJECT_STRUCTURE.md](PROJECT_STRUCTURE.md)** - Complete architecture overview and tech stack details
-- 📝 **[CURRENT_STRUCTURE.txt](CURRENT_STRUCTURE.txt)** - Quick reference for file organization  
-- 🎨 **[Components Guide](src/components/README.md)** - Frontend components documentation
-- 🔧 **[Server Guide](src/server/README.md)** - Backend API and tRPC documentation
+- 🎨 **[Components Guide](client/components/README.md)** - Frontend components documentation
+- 🔧 **[Server Guide](server/README.md)** - Backend API and tRPC documentation
 
 **Key Concepts:**
-- **Frontend**: `src/app/` (pages), `src/components/` (React components)
-- **Backend**: `src/server/` (API logic), `prisma/` (database)
-- **Shared**: `src/trpc/` (type-safe API), `src/hooks/` (React hooks)
+- **Frontend**: `src/app/` (pages), `client/components/` (React components), `client/hooks/` (React hooks)
+- **Backend**: `server/api/` (API logic), `server/lib/` (server utilities), `prisma/` (database)
+- **Shared**: `client/trpc/` (tRPC client setup)
 
 ---
 
