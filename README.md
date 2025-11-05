@@ -21,6 +21,8 @@
 
 Screenshots and visual documentation can be added to the `public/` directory for future reference.
 
+> **Note:** Previous screenshots have been moved to keep the repository clean. New screenshots can be added to the `public/` directory.
+
 ---
 
 ## 📚 Documentation & Project Structure
