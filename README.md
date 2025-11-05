@@ -19,9 +19,22 @@
 
 ## 📸 Screenshots
 
-Screenshots and visual documentation can be added to the `public/` directory for future reference.
+### 🚀 **Project Overview**
+![Project Overview](/screenshots/project-overview.png)
 
-> **Note:** Previous screenshots have been moved to keep the repository clean. New screenshots can be added to the `public/` directory.
+### 🎯 **Dashboard**
+![Dashboard](/screenshots/dashboard.png)
+
+### 🤖 **AI Code Assistant**
+![AI Assistant](/screenshots/ai-assistant.png)
+
+### 📊 **Commit Intelligence**
+![Commit Intelligence](/screenshots/commit-intelligence.png)
+
+### 👥 **Team Collaboration**
+![Team Collaboration](/screenshots/team-collaboration.png)
+
+> **Note:** Screenshots can be added to the `public/screenshots/` directory and referenced using `/screenshots/filename.png`
 
 ---
 
