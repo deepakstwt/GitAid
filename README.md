@@ -27,18 +27,7 @@
 ### 🎯 Dashboard  
 ![Dashboard](./screenshots/Dashboard.jpeg)
 
-### 🤖 AI Code Assistant
-*Coming soon - Screenshot of AI-powered code analysis*
-
-### 📊 Commit Intelligence
-*Coming soon - Screenshot of commit analysis and insights*
-
-### 👥 Team Collaboration
-*Coming soon - Screenshot of team features and collaboration tools*
-
 </div>
-
-> **📝 Note:** Screenshots will be added to showcase the application features. To add screenshots, place image files in `public/screenshots/` and reference them in this section.
 
 ---
 
