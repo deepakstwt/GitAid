@@ -46,7 +46,6 @@ export default function Page() {
           <div className="relative">
             <SignUp 
               appearance={{
-                baseTheme: 'dark',
                 variables: {
                   colorPrimary: '#6366f1',
                   colorText: '#ffffff',

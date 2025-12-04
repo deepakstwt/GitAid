@@ -10,7 +10,7 @@ import { Card, CardContent } from '@/components/ui/card';
 
 // Lazy load heavy components to improve initial page load
 const CommitIntelligenceDashboard = dynamic(
-  () => import('@/components/CommitIntelligenceDashboard').then(mod => ({ default: mod.CommitIntelligenceDashboard })),
+  () => import('@/components/CommitIntelligenceDashboard'),
   {
     loading: () => <CommitIntelligenceDashboardSkeleton />,
     ssr: false, // Only load on client since it has client-side logic
@@ -75,7 +75,7 @@ function AICodeAssistantSkeleton() {
 
 // Import the main dashboard component logic
 const DashboardPageContent = dynamic(
-  () => import('./page.client'),
+  () => import('./page'),
   {
     loading: () => <DashboardPageSkeleton />,
     ssr: true, // Keep SSR for SEO
