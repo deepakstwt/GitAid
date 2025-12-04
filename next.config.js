@@ -11,6 +11,9 @@ const config = {
   poweredByHeader: false,
   compress: true,
 
+  // Enable standalone output for Docker
+  output: process.env.DOCKER_BUILD === "true" ? "standalone" : undefined,
+
   // Development optimizations
   onDemandEntries: {
     // Period (in ms) where the server will keep pages in the buffer
