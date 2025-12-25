@@ -29,8 +29,8 @@ CLIENT_VARS=(
   "NEXT_PUBLIC_CLERK_SIGN_UP_FORCE_REDIRECT_URL"
 )
 
-# Check if .env file exists
-if [ ! -f .env ]; then
+# Check if .env file exists (in backend directory)
+if [ ! -f ../.env ]; then
   echo -e "${YELLOW}⚠️  .env file not found${NC}"
   echo "Creating .env.example template..."
   echo ""
@@ -40,9 +40,9 @@ else
 fi
 
 # Load .env file if it exists
-if [ -f .env ]; then
+if [ -f ../.env ]; then
   set -a
-  source .env
+  source ../.env
   set +a
 fi
 

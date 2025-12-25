@@ -45,6 +45,10 @@ export default function Page() {
           
           <div className="relative">
             <SignIn 
+              routing="path"
+              path="/sign-in"
+              signUpUrl="/sign-up"
+              afterSignInUrl="/sync-user"
               appearance={{
                 baseTheme: 'dark',
                 variables: {
