@@ -234,8 +234,12 @@ npm run verify:implementation     # System verification
 ### **Docker Deployment**
 
 ```bash
-# Build the image
-docker build -t git-gud-manager .
+# Build the image (from project root)
+docker build -f backend/Dockerfile -t git-gud-manager .
+
+# Or use docker-compose (from backend directory)
+cd backend
+docker-compose up -d
 
 # Run with environment variables
 docker run -p 3000:3000 --env-file .env git-gud-manager

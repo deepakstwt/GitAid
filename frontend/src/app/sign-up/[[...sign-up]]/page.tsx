@@ -1,5 +1,5 @@
-import { SignIn } from '@clerk/nextjs'
-import { Github, Sparkles } from 'lucide-react'
+import { SignUp } from '@clerk/nextjs'
+import { Github, Sparkles, Rocket } from 'lucide-react'
 
 export default function Page() {
   return (
@@ -44,7 +44,11 @@ export default function Page() {
           <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 rounded-3xl blur-xl opacity-20 animate-pulse" />
           
           <div className="relative">
-            <SignIn 
+            <SignUp 
+              routing="path"
+              path="/sign-up"
+              signInUrl="/sign-in"
+              afterSignUpUrl="/sync-user"
               appearance={{
                 variables: {
                   colorPrimary: '#6366f1',
@@ -90,10 +94,21 @@ export default function Page() {
         </div>
 
         {/* Bottom Info */}
-        <div className="mt-8 text-center">
+        <div className="mt-8 text-center space-y-3">
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 backdrop-blur-sm">
             <Sparkles className="w-4 h-4 text-yellow-400" />
             <span className="text-sm text-gray-400">Secure Authentication</span>
+          </div>
+          <div className="flex items-center justify-center gap-6 text-sm text-gray-500">
+            <div className="flex items-center gap-2">
+              <Rocket className="w-4 h-4 text-blue-400" />
+              <span>Fast Setup</span>
+            </div>
+            <div className="w-1 h-1 rounded-full bg-gray-600" />
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-purple-400" />
+              <span>AI Powered</span>
+            </div>
           </div>
         </div>
       </div>

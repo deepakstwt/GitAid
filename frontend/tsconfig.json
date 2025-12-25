@@ -29,7 +29,7 @@
     "paths": {
       "@/*": ["./src/*"],
       "@/client/*": ["./client/*"],
-      "@/server/*": ["./server/*"],
+      "@/server/*": ["../backend/server/*"],
       "@/components/*": ["./client/components/*"],
       "@/hooks/*": ["./client/hooks/*"],
       "@/lib/*": ["./client/lib/*"],
@@ -45,7 +45,7 @@
     "src/**/*.js",
     "client/**/*.ts",
     "client/**/*.tsx",
-    "server/**/*.ts"
+    "../backend/server/**/*.ts"
   ],
   "exclude": [
     "node_modules",

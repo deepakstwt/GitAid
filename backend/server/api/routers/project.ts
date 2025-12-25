@@ -75,16 +75,26 @@ export const projectRouter = createTRPCRouter({
     }),
 
   getProjects: protectedProcedure.query(async ({ ctx }) => {
-    return await ctx.db.project.findMany({
-      where: {
-        UserToProjects: {
-          some: {
-            userId: ctx.userId,
+    try {
+      console.log('🔍 Fetching projects for user:', ctx.userId);
+      const projects = await withRetry(async () => {
+        return await ctx.db.project.findMany({
+          where: {
+            UserToProjects: {
+              some: {
+                userId: ctx.userId,
+              },
+            },
+            deletedAt: null,
           },
-        },
-        deletedAt: null,
-      },
-    });
+        });
+      });
+      console.log(`✅ Found ${projects.length} projects for user ${ctx.userId}`);
+      return projects;
+    } catch (error) {
+      console.error('❌ Error fetching projects:', error);
+      throw new Error(`Failed to fetch projects: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   }),
     
   updateProject: protectedProcedure
