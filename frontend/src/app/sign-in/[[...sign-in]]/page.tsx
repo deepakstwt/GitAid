@@ -50,7 +50,6 @@ export default function Page() {
               signUpUrl="/sign-up"
               afterSignInUrl="/sync-user"
               appearance={{
-                baseTheme: 'dark',
                 variables: {
                   colorPrimary: '#6366f1',
                   colorText: '#ffffff',

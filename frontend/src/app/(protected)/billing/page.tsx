@@ -182,7 +182,7 @@ export default function BillingPage() {
                         ? 'bg-white/10 hover:bg-white/20 text-white border border-white/20'
                         : 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white border-0'
                     }`}
-                    onClick={() => setSelectedPlan(plan.id)}
+                    onClick={() => setSelectedPlan(plan.id as 'free' | 'pro' | 'enterprise')}
                   >
                     {plan.id === 'free' ? 'Current Plan' : plan.buttonText}
                   </Button>

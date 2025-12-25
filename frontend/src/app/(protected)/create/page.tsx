@@ -226,7 +226,7 @@ export default function CreateProjectPage() {
                   </div>
                   <div>
                     <p className="text-sm font-medium text-white">Repository Sync</p>
-                    <p className="text-xs text-gray-400">If provided, we'll sync your GitHub repo</p>
+                    <p className="text-xs text-gray-400">If provided, we&apos;ll sync your GitHub repo</p>
                   </div>
                 </div>
 

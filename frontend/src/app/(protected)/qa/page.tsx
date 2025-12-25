@@ -322,11 +322,11 @@ const QAPage = () => {
               {/* Content Area with Scrolling */}
               <div className="flex-1 overflow-hidden bg-gradient-to-br from-gray-900/50 to-black/50">
                 <div
-                  className={`grid ${isMobile ? "grid-cols-1" : selectedQuestion.fileReferences && selectedQuestion.fileReferences.length > 0 ? "grid-cols-5" : "grid-cols-1"} gap-6 p-8 h-full overflow-y-auto custom-scrollbar transition-all duration-300`}
+                  className={`grid ${isMobile ? "grid-cols-1" : selectedQuestion.fileReferences && Array.isArray(selectedQuestion.fileReferences) && selectedQuestion.fileReferences.length > 0 ? "grid-cols-5" : "grid-cols-1"} gap-6 p-8 h-full overflow-y-auto custom-scrollbar transition-all duration-300`}
                   style={{ maxHeight: 'calc(92vh - 180px)' }}
                 >
                   {/* Answer Section - Left Side (3/5 width) */}
-                  <div className={`flex flex-col ${selectedQuestion.fileReferences && selectedQuestion.fileReferences.length > 0 ? "col-span-3" : "col-span-1"}`}>
+                  <div className={`flex flex-col ${selectedQuestion.fileReferences && Array.isArray(selectedQuestion.fileReferences) && selectedQuestion.fileReferences.length > 0 ? "col-span-3" : "col-span-1"}`}>
                     <div className="flex items-center gap-3 mb-4">
                       <div className="p-2 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg shadow-lg">
                         <MessageSquare className="h-5 w-5 text-white" />
@@ -362,7 +362,7 @@ const QAPage = () => {
                         </div>
                         <div>
                           <h3 className="text-lg font-bold text-white">
-                            References ({selectedQuestion.fileReferences.length})
+                            References ({Array.isArray(selectedQuestion.fileReferences) ? selectedQuestion.fileReferences.length : 0})
                           </h3>
                           <p className="text-xs text-gray-400">Source files with similarity</p>
                         </div>
