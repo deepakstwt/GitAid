@@ -22,10 +22,10 @@
 <div align="center">
 
 ### 🚀 Project Overview
-![Project Overview](./frontend/public/screenshots/Project_Overview.jpeg)
+![Project Overview](./screenshots/Project_Overview.jpeg)
 
 ### 🎯 Dashboard  
-![Dashboard](./frontend/public/screenshots/Dashboard.jpeg)
+![Dashboard](./screenshots/Dashboard.jpeg)
 
 </div>
 
