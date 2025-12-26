@@ -35,13 +35,13 @@
 
 **New to the project?** Check out these guides:
 
-- 🎨 **[Components Guide](client/components/README.md)** - Frontend components documentation
-- 🔧 **[Server Guide](server/README.md)** - Backend API and tRPC documentation
+- 🎨 **[Components Guide](frontend/client/components/README.md)** - Frontend components documentation
+- 🔧 **[Server Guide](backend/server/README.md)** - Backend API and tRPC documentation
 
 **Key Concepts:**
-- **Frontend**: `src/app/` (pages), `client/components/` (React components), `client/hooks/` (React hooks)
-- **Backend**: `server/api/` (API logic), `server/lib/` (server utilities), `prisma/` (database)
-- **Shared**: `client/trpc/` (tRPC client setup)
+- **Frontend**: `frontend/src/app/` (pages), `frontend/client/components/` (React components), `frontend/client/hooks/` (React hooks)
+- **Backend**: `backend/server/api/` (API logic), `backend/server/lib/` (server utilities), `backend/prisma/` (database)
+- **Shared**: `frontend/client/trpc/` (tRPC client setup)
 
 ---
 
@@ -94,35 +94,35 @@
 
 2. **Install dependencies**
    ```bash
+   cd frontend
    npm install
    ```
 
 3. **Set up environment variables**
    ```bash
-   cp .env.example .env
+   cp backend/.env.example backend/.env
    ```
    
-   Configure your `.env` file with your actual values.
+   Configure your `backend/.env` file with your actual values.
 
 4. **Set up the database**
    ```bash
    # Install pgvector extension in PostgreSQL
-   npm run db:setup-vector
-   
-   # Run migrations
-   npm run db:migrate
+   cd backend
+   npx prisma migrate dev
    
    # Generate Prisma client
-   npm run db:generate
+   npx prisma generate
    ```
 
 5. **Start the development server**
    ```bash
+   cd frontend
    npm run dev
    ```
 
 6. **Open your browser**
-   Navigate to `http://localhost:3000` and start exploring!
+   Navigate to `http://localhost:3001` and start exploring!
 
 ---
 
@@ -131,25 +131,26 @@
 ### 🏗️ **Architecture Overview**
 
 ```
-git-gud-manager/
-├── src/
-│   ├── app/                    # Next.js App Router
-│   ├── components/             # Reusable UI components
-│   ├── lib/                    # Core business logic
-│   │   ├── ai.ts              # AI integration (Gemini)
-│   │   ├── github.ts          # GitHub API integration
-│   │   ├── embeddings.ts      # Vector embeddings
-│   │   ├── rag-pipeline.ts    # RAG implementation
-│   │   └── database.ts        # Database operations
-│   ├── server/                # tRPC API routes
-│   └── styles/                # Global styles
-├── prisma/                    # Database schema & migrations
-├── tests/                     # Comprehensive test suite
-│   ├── unit/                  # Unit tests
-│   ├── integration/           # Integration tests
-│   ├── utilities/             # Database utilities
-│   └── verification/          # System verification
-└── public/                    # Static assets
+GitAid/
+├── frontend/
+│   ├── src/app/               # Next.js App Router
+│   ├── client/components/     # Reusable UI components
+│   ├── client/lib/            # Frontend utilities
+│   ├── client/hooks/          # React hooks
+│   ├── client/trpc/          # tRPC client setup
+│   ├── public/               # Static assets
+│   └── config/               # Frontend configuration
+├── backend/
+│   ├── server/api/           # tRPC API routes
+│   ├── server/lib/           # Core business logic
+│   │   ├── ai.ts            # AI integration (Gemini)
+│   │   ├── github.ts        # GitHub API integration
+│   │   ├── embeddings.ts    # Vector embeddings
+│   │   ├── rag-pipeline.ts  # RAG implementation
+│   │   └── database.ts      # Database operations
+│   ├── prisma/              # Database schema & migrations
+│   └── scripts/             # Deployment scripts
+└── README.md                # Project documentation
 ```
 
 ### 🔑 **Core Technologies**
@@ -253,14 +254,16 @@ docker run -p 3000:3000 --env-file .env git-gud-manager
 
 | Command | Description |
 |---------|-------------|
-| `npm run dev` | Start development server |
-| `npm run build` | Build for production |
-| `npm run start` | Start production server |
-| `npm run lint` | Run ESLint |
-| `npm run lint:fix` | Fix ESLint issues |
-| `npm run typecheck` | Run TypeScript checks |
-| `npm run format:check` | Check code formatting |
-| `npm run format:write` | Format code with Prettier |
+| `cd frontend && npm run dev` | Start development server |
+| `cd frontend && npm run build` | Build for production |
+| `cd frontend && npm run start` | Start production server |
+| `cd frontend && npm run lint` | Run ESLint |
+| `cd frontend && npm run lint:fix` | Fix ESLint issues |
+| `cd frontend && npm run typecheck` | Run TypeScript checks |
+| `cd frontend && npm run format:check` | Check code formatting |
+| `cd frontend && npm run format:write` | Format code with Prettier |
+| `cd backend && npx prisma migrate dev` | Run database migrations |
+| `cd backend && npx prisma studio` | Open Prisma Studio |
 
 ### **Development Workflow**
 
@@ -336,7 +339,7 @@ This project follows the [Contributor Covenant](https://www.contributor-covenant
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License - see the [LICENSE](frontend/LICENSE) file for details.
 
 ---
 
