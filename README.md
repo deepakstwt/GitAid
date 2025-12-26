@@ -149,7 +149,7 @@ GitAid/
 │   │   ├── rag-pipeline.ts  # RAG implementation
 │   │   └── database.ts      # Database operations
 │   ├── prisma/              # Database schema & migrations
-│   └── scripts/             # Deployment scripts
+│   └── scripts/             # Utility scripts
 └── README.md                # Project documentation
 ```
 
@@ -211,41 +211,6 @@ npm run verify:implementation     # System verification
 
 ---
 
-## 🚀 Deployment
-
-### **Production Deployment**
-
-1. **Build the application**
-   ```bash
-   npm run build
-   ```
-
-2. **Deploy to your platform**
-   - **Vercel**: Connect your GitHub repository
-   - **Railway**: Use the provided `railway.toml`
-   - **Docker**: Dockerfile included for containerization
-
-3. **Set up production database**
-   - Configure PostgreSQL with pgvector extension
-   - Run production migrations: `npm run db:migrate`
-
-4. **Environment Configuration**
-   Ensure all production environment variables are set securely.
-
-### **Docker Deployment**
-
-```bash
-# Build the image (from project root)
-docker build -f backend/Dockerfile -t git-gud-manager .
-
-# Or use docker-compose (from backend directory)
-cd backend
-docker-compose up -d
-
-# Run with environment variables
-docker run -p 3000:3000 --env-file .env git-gud-manager
-```
-
 ---
 
 ## 🛠️ Development
@@ -255,8 +220,6 @@ docker run -p 3000:3000 --env-file .env git-gud-manager
 | Command | Description |
 |---------|-------------|
 | `cd frontend && npm run dev` | Start development server |
-| `cd frontend && npm run build` | Build for production |
-| `cd frontend && npm run start` | Start production server |
 | `cd frontend && npm run lint` | Run ESLint |
 | `cd frontend && npm run lint:fix` | Fix ESLint issues |
 | `cd frontend && npm run typecheck` | Run TypeScript checks |
@@ -264,6 +227,7 @@ docker run -p 3000:3000 --env-file .env git-gud-manager
 | `cd frontend && npm run format:write` | Format code with Prettier |
 | `cd backend && npx prisma migrate dev` | Run database migrations |
 | `cd backend && npx prisma studio` | Open Prisma Studio |
+| `cd backend && npx prisma db push` | Push database schema changes |
 
 ### **Development Workflow**
 
@@ -302,7 +266,6 @@ docker run -p 3000:3000 --env-file .env git-gud-manager
 | `CLERK_SECRET_KEY` | Clerk secret key | ✅ |
 | `GEMINI_API_KEY` | Google Gemini API key | ✅ |
 | `GITHUB_TOKEN` | GitHub personal access token | ✅ |
-| `NEXT_PUBLIC_APP_URL` | Application URL | ✅ |
 
 ### **Database Setup**
 
@@ -346,7 +309,7 @@ This project is licensed under the MIT License - see the [LICENSE](frontend/LICE
 ## 🙏 Acknowledgments
 
 - **Google Gemini AI** for intelligent commit analysis
-- **Vercel** for Next.js framework and deployment platform
+- **Next.js** for the React framework
 - **Clerk** for authentication infrastructure
 - **Prisma** for database tooling
 - **Radix UI** for accessible component primitives

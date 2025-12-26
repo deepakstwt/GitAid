@@ -20,7 +20,7 @@ export async function indexGithubRepo(
   skippedCount: number;
   errors: string[];
 }> {
-  console.log(`🚀 Starting GitHub RAG indexing for: ${githubUrl}`);
+  console.log(`Starting GitHub RAG indexing for: ${githubUrl}`);
   
   const results = {
     success: false,
@@ -30,36 +30,26 @@ export async function indexGithubRepo(
   };
 
   try {
-    // Step 1: Load repo documents
-    console.log('📂 Loading repository files...');
     const docs = await loadGitHubRepository(githubUrl, githubToken);
-    console.log(`✅ Loaded ${docs.length} files from repository`);
 
     if (docs.length === 0) {
-      console.warn('⚠️ No documents found in repository');
+      console.warn('No documents found in repository');
       return { ...results, success: true };
     }
 
     // Step 2: Filter relevant files
     const relevantDocs = filterRelevantDocuments(docs);
-    console.log(`📋 Processing ${relevantDocs.length} relevant files (skipped ${docs.length - relevantDocs.length})`);
+    console.log(`Processing ${relevantDocs.length} relevant files (skipped ${docs.length - relevantDocs.length})`);
     results.skippedCount = docs.length - relevantDocs.length;
 
     // Step 3: Process each document
     const processPromises = relevantDocs.map(async (doc, index) => {
       const fileName = extractFileName(doc);
-      console.log(`📄 Processing file ${index + 1}/${relevantDocs.length}: ${fileName}`);
+        console.log(`Processing file ${index + 1}/${relevantDocs.length}: ${fileName}`);
       
       try {
-        // Step 3a: Summarize the code
-        console.log(`🤖 Generating summary for: ${fileName}`);
         const summary = await summarizeCode(doc);
-        console.log(`✅ Generated summary for: ${fileName}`);
-
-        // Step 3b: Generate embedding
-        console.log(`🧮 Generating embedding for: ${fileName}`);
         const embedding = await generateEmbedding(summary);
-        console.log(`✅ Generated embedding for: ${fileName}`);
 
         return {
           success: true,
@@ -120,10 +110,10 @@ export async function indexGithubRepo(
             WHERE id = ${record.id};
           `;
 
-          console.log(`✅ Stored embedding for: ${fileName}`);
+          console.log(`Stored embedding for: ${fileName}`);
           successCount++;
         } catch (dbError) {
-          console.error(`❌ Database error for ${fileName}:`, dbError);
+          console.error(`Database error for ${fileName}:`, dbError);
           results.errors.push(`Database error for ${fileName}: ${dbError instanceof Error ? dbError.message : 'Unknown error'}`);
         }
       } else if (result.status === 'fulfilled' && !result.value.success) {
@@ -136,12 +126,12 @@ export async function indexGithubRepo(
     results.processedCount = successCount;
     results.success = true;
 
-    console.log(`🎉 GitHub RAG indexing completed!`);
-    console.log(`📊 Results: ${successCount} processed, ${results.skippedCount} skipped, ${results.errors.length} errors`);
+    console.log(`GitHub RAG indexing completed`);
+    console.log(`Results: ${successCount} processed, ${results.skippedCount} skipped, ${results.errors.length} errors`);
 
     return results;
   } catch (error) {
-    console.error('❌ Fatal error during GitHub RAG indexing:', error);
+    console.error('Fatal error during GitHub RAG indexing:', error);
     results.errors.push(`Fatal error: ${error instanceof Error ? error.message : 'Unknown error'}`);
     return results;
   }
@@ -241,7 +231,7 @@ export async function queryRAGSystem(
     similarity: number;
   }>;
 }> {
-  console.log(`🔍 Querying RAG system for: "${question}"`);
+  console.log(`Querying RAG system for: "${question}"`);
   
   try {
     // Step 1: Generate embedding for the question
@@ -266,7 +256,7 @@ export async function queryRAGSystem(
       similarity: number;
     }>;
 
-    console.log(`📋 Found ${similarDocs.length} similar documents`);
+    console.log(`Found ${similarDocs.length} similar documents`);
 
     // Step 3: Generate answer using retrieved context
     const { generateRAGAnswer } = await import('./embeddings');

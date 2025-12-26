@@ -136,7 +136,7 @@ index 1234567..abcdefg 100644
 `;
     
     const testSummary = await summarizeCommit(sampleDiff);
-    console.log('✅ Gemini AI test successful:', testSummary);
+    console.log Gemini AI test successful:', testSummary);
     return true;
   } catch (error) {
     console.error('❌ Gemini AI test failed:', error);

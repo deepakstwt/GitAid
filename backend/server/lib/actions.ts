@@ -52,31 +52,24 @@ export async function createMeeting({ name, audioUrl, projectId }: CreateMeeting
 }
 
 export async function askQuestion(projectId: string, question: string) {
-  console.log(`🔍 Asking question for project ${projectId}: "${question}"`);
-  
-  // Get authenticated user
   const { userId } = await auth();
   if (!userId) {
     throw new Error('User not authenticated');
   }
   
   try {
-    // Step 1: Generate embedding for the question
-    console.log('🧮 Generating question embedding...');
     const questionEmbedding = await getEmbeddings(question);
     
-    // Step 2: Run PGVector similarity search
-    console.log('🔍 Searching for similar documents...');
     const similarDocs = await db.$queryRaw`
       SELECT 
         "fileName",
         "summary", 
         "source" as "sourceCode",
-        1 - (embedding <=> ${questionEmbedding as any}::vector) as similarity
+        1 - (embedding <=> ${questionEmbedding}::vector) as similarity
       FROM "SourceCodeEmbedding"
       WHERE "projectId" = ${projectId}
         AND embedding IS NOT NULL
-        AND 1 - (embedding <=> ${questionEmbedding as any}::vector) > 0.5
+        AND 1 - (embedding <=> ${questionEmbedding}::vector) > 0.5
       ORDER BY embedding <=> ${questionEmbedding as any}::vector
       LIMIT 10;
     ` as FileReference[];
@@ -120,7 +113,7 @@ Answer:`;
         fileReferences: similarDocs as any, // Cast to satisfy Prisma Json type
       },
     });
-    console.log('✅ Question processing completed');
+    console.log Question processing completed');
 
     return {
       answer: fullAnswer,

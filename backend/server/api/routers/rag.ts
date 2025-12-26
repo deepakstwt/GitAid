@@ -4,9 +4,6 @@ import { processRepositoryForRAG, queryRAG, getRAGStats, clearRAGData } from "@/
 import { indexGithubRepo, queryRAGSystem } from "@/server/lib/github-rag-indexer";
 
 export const ragRouter = createTRPCRouter({
-  /**
-   * Process a GitHub repository through the RAG pipeline
-   */
   processRepository: protectedProcedure
     .input(z.object({
       projectId: z.string(),
@@ -21,9 +18,6 @@ export const ragRouter = createTRPCRouter({
       );
     }),
 
-  /**
-   * Query the RAG system with a natural language question
-   */
   query: protectedProcedure
     .input(z.object({
       projectId: z.string(),
@@ -34,9 +28,6 @@ export const ragRouter = createTRPCRouter({
       return await queryRAG(input.projectId, input.question, input.topK);
     }),
 
-  /**
-   * Get RAG statistics for a project
-   */
   getStats: protectedProcedure
     .input(z.object({
       projectId: z.string(),
@@ -45,9 +36,6 @@ export const ragRouter = createTRPCRouter({
       return await getRAGStats(input.projectId);
     }),
 
-  /**
-   * Clear all RAG data for a project
-   */
   clearData: protectedProcedure
     .input(z.object({
       projectId: z.string(),
@@ -56,9 +44,6 @@ export const ragRouter = createTRPCRouter({
       return await clearRAGData(input.projectId);
     }),
 
-  /**
-   * Get all documents for a project (for debugging/admin)
-   */
   getDocuments: protectedProcedure
     .input(z.object({
       projectId: z.string(),
@@ -121,7 +106,6 @@ export const ragRouter = createTRPCRouter({
     .mutation(async ({ input, ctx }) => {
       const result = await queryRAGSystem(input.projectId, input.question, input.topK);
       
-      // Persist the Q&A in database
       try {
         await ctx.db.question.create({
           data: {
@@ -132,14 +116,13 @@ export const ragRouter = createTRPCRouter({
             fileReferences: result.sources.map(source => ({
               fileName: source.fileName,
               summary: source.summary,
-              sourceCode: source.sourceCode || '', // Include source code if available
+              sourceCode: source.sourceCode || '',
               similarity: source.similarity,
             })),
           },
         });
       } catch (error) {
         console.error('Failed to persist Q&A:', error);
-        // Continue even if persistence fails
       }
       
       return result;

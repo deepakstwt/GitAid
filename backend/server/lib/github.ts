@@ -1,7 +1,9 @@
 import { Octokit } from '@octokit/rest';
 import axios from 'axios';
 
-// Type definition for commit data
+const DEFAULT_COMMITS_PER_PAGE = 15;
+const MAX_COMMITS_LIMIT = 100;
+
 export interface CommitData {
   commitHash: string;
   commitMessage: string;
@@ -10,11 +12,6 @@ export interface CommitData {
   commitDate: Date | null;
 }
 
-/**
- * Parse GitHub URL to extract owner and repository name
- * @param githubUrl - Full GitHub repository URL
- * @returns Object with owner and repo, or null if invalid
- */
 function parseGitHubUrl(githubUrl: string): { owner: string; repo: string } | null {
   try {
     const url = new URL(githubUrl);
@@ -46,20 +43,12 @@ function parseGitHubUrl(githubUrl: string): { owner: string; repo: string } | nu
   }
 }
 
-/**
- * Fetch commit history from a GitHub repository (server-side only)
- * @param githubUrl - GitHub repository URL
- * @param githubToken - GitHub personal access token
- * @returns Array of commit data objects
- */
 export async function getCommitHashes(githubUrl: string, githubToken: string): Promise<CommitData[]> {
   try {
-    // Initialize Octokit with provided token (server-side only)
     const octokit = new Octokit({
       auth: githubToken,
     });
     
-    // Parse the GitHub URL
     const parsed = parseGitHubUrl(githubUrl);
     if (!parsed) {
       throw new Error(`Invalid GitHub URL: ${githubUrl}`);
@@ -69,14 +58,12 @@ export async function getCommitHashes(githubUrl: string, githubToken: string): P
     
     console.log(`Fetching commits for ${owner}/${repo}...`);
     
-    // Fetch commits from GitHub API
     const response = await octokit.rest.repos.listCommits({
       owner,
       repo,
-      per_page: 15, // Latest 15 commits
+      per_page: DEFAULT_COMMITS_PER_PAGE,
     });
     
-    // Map GitHub API response to our CommitData format
     const commits: CommitData[] = response.data.map((commit) => ({
       commitHash: commit.sha,
       commitMessage: commit.commit.message,
@@ -85,15 +72,11 @@ export async function getCommitHashes(githubUrl: string, githubToken: string): P
       commitDate: commit.commit.author?.date ? new Date(commit.commit.author.date) : null,
     }));
     
-    // Sort by commit date (descending - newest first)
     commits.sort((a, b) => {
       if (!a.commitDate) return 1;
       if (!b.commitDate) return -1;
       return b.commitDate.getTime() - a.commitDate.getTime();
     });
-    
-    console.log(`Successfully fetched ${commits.length} commits`);
-    console.log('Sample commit data:', commits[0]);
     
     return commits;
     
@@ -110,12 +93,12 @@ export async function getCommitHashes(githubUrl: string, githubToken: string): P
  */
 export async function testCommitFetcher(githubUrl: string, githubToken: string): Promise<void> {
   try {
-    console.log(`\n🔍 Testing commit fetcher with: ${githubUrl}`);
+    console.log(`Testing commit fetcher with: ${githubUrl}`);
     console.log('='.repeat(50));
     
     const commits = await getCommitHashes(githubUrl, githubToken);
     
-    console.log(`\n✅ Success! Found ${commits.length} commits:`);
+    console.log(`Success! Found ${commits.length} commits`);
     console.log('='.repeat(50));
     
     commits.forEach((commit, index) => {
@@ -127,7 +110,7 @@ export async function testCommitFetcher(githubUrl: string, githubToken: string):
     });
     
   } catch (error) {
-    console.error('\n❌ Error testing commit fetcher:', error);
+    console.error('Error testing commit fetcher:', error);
   }
 }
 
@@ -323,7 +306,7 @@ export async function getCommitDiff(githubUrl: string, commitHash: string, githu
  */
 export async function summarizeCommit(githubUrl: string, commitHash: string, commitMessage: string, githubToken: string): Promise<string> {
   try {
-    console.log(`🤖 Generating AI summary for commit ${commitHash.substring(0, 7)}...`);
+    console.log(`Generating AI summary for commit ${commitHash.substring(0, 7)}`);
     
     // Import AI utilities
     const { summarizeText } = await import('@/server/lib/ai');
@@ -331,14 +314,11 @@ export async function summarizeCommit(githubUrl: string, commitHash: string, com
     // Fetch the commit diff
     const diffText = await fetchCommitDiff(githubUrl, commitHash, githubToken);
     
-    // Generate AI summary using Gemini
     const aiSummary = await summarizeText(diffText);
-    
-    console.log(`✅ AI summary generated for ${commitHash.substring(0, 7)}: ${aiSummary.substring(0, 100)}...`);
     return aiSummary;
     
   } catch (error) {
-    console.error(`❌ Failed to generate AI summary for commit ${commitHash}:`, error);
+      console.error(`Failed to generate AI summary for commit ${commitHash}:`, error);
     
     // Fallback to pattern-based summary
     return generateBasicCommitSummary(commitMessage);
@@ -414,27 +394,22 @@ export async function pollCommits(projectId: string): Promise<{ processed: numbe
   const { db } = await import('@/server/db');
   
   try {
-    console.log(`🔍 Polling commits for project: ${projectId}`);
+    console.log(`Polling commits for project: ${projectId}`);
     
     // Step 1: Fetch project and GitHub URL from DB
     const { project, githubUrl } = await fetchProjectGithubUrl(projectId);
-    console.log(`📂 Project found: ${project.name} -> ${githubUrl}`);
-    
-    // Step 2: Use getCommitHashes to fetch the latest commits
     const allCommits = await getCommitHashes(githubUrl, env.GITHUB_TOKEN);
-    const latestCommits = allCommits.slice(0, 10); // Limit to 10 latest
-    
-    console.log(`📥 Fetched ${latestCommits.length} latest commits from GitHub`);
+    const latestCommits = allCommits.slice(0, 10);
     
     // Step 3: Filter out already-processed commits
     const newCommits = await filterUnprocessedCommits(latestCommits, projectId);
     
     if (newCommits.length === 0) {
-      console.log(`✅ No new commits to process for project ${project.name}`);
+      console.log(`No new commits to process for project ${project.name}`);
       return { processed: 0, total: latestCommits.length, commits: [] };
     }
     
-    console.log(`🆕 Processing ${newCommits.length} new commits with AI summarization...`);
+    console.log(`Processing ${newCommits.length} new commits with AI summarization`);
     
     // Process commits concurrently with Promise.allSettled
     const commitProcessingPromises = newCommits.map(async (commit) => {
@@ -498,8 +473,8 @@ export async function pollCommits(projectId: string): Promise<{ processed: numbe
     
     const successfulSummaries = processedCommits.filter(c => c.success).length;
     
-    console.log(`🎉 Successfully processed ${processedCommits.length} commits with ${successfulSummaries} AI summaries`);
-    console.log(`💾 Saved ${savedCommits.count} commits to database`);
+    console.log(`Successfully processed ${processedCommits.length} commits with ${successfulSummaries} AI summaries`);
+    console.log(`Saved ${savedCommits.count} commits to database`);
     
     return {
       processed: savedCommits.count,
@@ -508,7 +483,7 @@ export async function pollCommits(projectId: string): Promise<{ processed: numbe
     };
     
   } catch (error) {
-    console.error(`❌ Error polling commits for project ${projectId}:`, error);
+    console.error(`Error polling commits for project ${projectId}:`, error);
     throw error;
   }
 }
@@ -520,7 +495,7 @@ export async function pollCommits(projectId: string): Promise<{ processed: numbe
  */
 export async function pollCommitsForProjects(projectIds: string[]): Promise<{ results: any[]; totalProcessed: number }> {
   try {
-    console.log(`🔄 Polling commits for ${projectIds.length} projects...`);
+    console.log(`Polling commits for ${projectIds.length} projects`);
     
     const results = [];
     let totalProcessed = 0;
@@ -542,7 +517,7 @@ export async function pollCommitsForProjects(projectIds: string[]): Promise<{ re
       }
     }
     
-    console.log(`🏁 Completed polling. Total commits processed: ${totalProcessed}`);
+    console.log(`Completed polling. Total commits processed: ${totalProcessed}`);
     
     return { results, totalProcessed };
   } catch (error) {

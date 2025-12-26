@@ -75,7 +75,7 @@ export default function BillingPage() {
         'Custom AI models',
         'SSO & advanced security',
         'Custom SLA',
-        'On-premise deployment'
+        'Enterprise support'
       ],
       icon: Crown,
       color: 'from-purple-500 to-pink-500',

@@ -17,8 +17,6 @@ export const projectRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      // First, ensure the user exists in the database
-      // Get user email from Clerk (we need to import clerkClient)
       const { clerkClient } = await import("@clerk/nextjs/server");
       const client = await clerkClient();
       const clerkUser = await client.users.getUser(ctx.userId);
@@ -28,7 +26,6 @@ export const projectRouter = createTRPCRouter({
         throw new Error("User email not found");
       }
 
-      // Upsert user to ensure they exist in database
       await ctx.db.user.upsert({
         where: { emailAddress: userEmail },
         update: {
@@ -45,7 +42,6 @@ export const projectRouter = createTRPCRouter({
         },
       });
 
-      // Then create the project
       const project = await ctx.db.project.create({
         data: {
           name: input.name,
@@ -58,16 +54,12 @@ export const projectRouter = createTRPCRouter({
         },
       });
 
-      // If a GitHub URL is provided, automatically poll commits
       if (input.githubUrl) {
         try {
-          console.log(`🔄 Auto-polling commits for new project: ${project.name}`);
           const { pollCommits } = await import("@/server/lib/github");
-          const pollResult = await pollCommits(project.id);
-          console.log(`✅ Auto-polled ${pollResult.processed} commits for project ${project.name}`);
+          await pollCommits(project.id);
         } catch (pollError) {
-          console.warn(`⚠️ Failed to auto-poll commits for project ${project.name}:`, pollError);
-          // Don't fail project creation if polling fails
+          console.warn('Failed to auto-poll commits:', pollError);
         }
       }
 
@@ -76,7 +68,6 @@ export const projectRouter = createTRPCRouter({
 
   getProjects: protectedProcedure.query(async ({ ctx }) => {
     try {
-      console.log('🔍 Fetching projects for user:', ctx.userId);
       const projects = await withRetry(async () => {
         return await ctx.db.project.findMany({
           where: {
@@ -89,10 +80,9 @@ export const projectRouter = createTRPCRouter({
           },
         });
       });
-      console.log(`✅ Found ${projects.length} projects for user ${ctx.userId}`);
       return projects;
     } catch (error) {
-      console.error('❌ Error fetching projects:', error);
+      console.error('Error fetching projects:', error);
       throw new Error(`Failed to fetch projects: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }),
@@ -106,7 +96,6 @@ export const projectRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      // Verify the user has access to this project
       const project = await ctx.db.project.findFirst({
         where: {
           id: input.id,
@@ -123,7 +112,6 @@ export const projectRouter = createTRPCRouter({
         throw new Error("Project not found or access denied");
       }
 
-      // Update the project
       const updatedProject = await ctx.db.project.update({
         where: { id: input.id },
         data: {
@@ -163,14 +151,11 @@ export const projectRouter = createTRPCRouter({
         throw new Error("Project does not have a GitHub URL");
       }
 
-      // Import the GitHub function and environment
       const { getCommitHashes } = await import("@/server/lib/github");
       const { env } = await import("@/server/config/env");
       
       try {
         const commits = await getCommitHashes(project.githubUrl, env.GITHUB_TOKEN);
-        
-        // Convert to the format expected by the UI
         return commits.map(commit => ({
           sha: commit.commitHash,
           commit: {
@@ -185,9 +170,10 @@ export const projectRouter = createTRPCRouter({
             avatar_url: commit.commitAuthorAvatar || ''
           }
         }));
-      } catch (error: any) {
+      } catch (error) {
         console.error("Failed to fetch commits from GitHub:", error);
-        throw new Error(`Failed to fetch commits: ${error.message}`);
+        const message = error instanceof Error ? error.message : 'Unknown error';
+        throw new Error(`Failed to fetch commits: ${message}`);
       }
     }),
 
@@ -198,7 +184,6 @@ export const projectRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      // Verify the user has access to this project
       const project = await ctx.db.project.findFirst({
         where: {
           id: input.projectId,
@@ -219,7 +204,6 @@ export const projectRouter = createTRPCRouter({
         throw new Error("Project does not have a GitHub URL");
       }
 
-      // Import the database functions and environment
       const { syncProjectCommits } = await import("@/server/lib/database");
       const { env } = await import("@/server/config/env");
       
@@ -256,11 +240,11 @@ export const projectRouter = createTRPCRouter({
         throw new Error("Project not found or access denied");
       }
 
-      // Get commits from database
+      const COMMITS_LIMIT = 15;
       return await ctx.db.comment.findMany({
         where: { projectId: input.projectId },
         orderBy: { commitDate: 'desc' },
-        take: 15,
+        take: COMMITS_LIMIT,
       });
     }),
     
@@ -271,7 +255,6 @@ export const projectRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      // Verify the user has access to this project
       const project = await ctx.db.project.findFirst({
         where: {
           id: input.projectId,
@@ -288,21 +271,20 @@ export const projectRouter = createTRPCRouter({
         throw new Error("Project not found or access denied");
       }
 
-      // Import the polling function
       const { pollCommits } = await import("@/server/lib/github");
       
       try {
         const result = await pollCommits(project.id);
         return result;
-      } catch (error: any) {
+      } catch (error) {
         console.error("Failed to poll commits:", error);
-        throw new Error(`Failed to poll commits: ${error.message}`);
+        const message = error instanceof Error ? error.message : 'Unknown error';
+        throw new Error(`Failed to poll commits: ${message}`);
       }
     }),
 
   pollAllProjectCommits: protectedProcedure
     .mutation(async ({ ctx }) => {
-      // Get all projects for the user
       const projects = await ctx.db.project.findMany({
         where: {
           UserToProjects: {
@@ -311,7 +293,7 @@ export const projectRouter = createTRPCRouter({
             },
           },
           deletedAt: null,
-          githubUrl: { not: null }, // Only projects with GitHub URLs
+          githubUrl: { not: null },
         },
         select: { id: true, name: true, githubUrl: true },
       });
@@ -320,16 +302,16 @@ export const projectRouter = createTRPCRouter({
         return { results: [], totalProcessed: 0 };
       }
 
-      // Import the polling function
       const { pollCommitsForProjects } = await import("@/server/lib/github");
       
       try {
         const projectIds = projects.map(p => p.id);
         const result = await pollCommitsForProjects(projectIds);
         return result;
-      } catch (error: any) {
+      } catch (error) {
         console.error("Failed to poll commits for all projects:", error);
-        throw new Error(`Failed to poll commits: ${error.message}`);
+        const message = error instanceof Error ? error.message : 'Unknown error';
+        throw new Error(`Failed to poll commits: ${message}`);
       }
     }),
 
@@ -362,7 +344,6 @@ export const projectRouter = createTRPCRouter({
         throw new Error("Project does not have a GitHub URL");
       }
 
-      // Import the GitHub loader functions
       const { loadGitHubRepositoryByExtensions, getRepositoryStats } = await import("@/server/lib/github-loader");
       const { env } = await import("@/server/config/env");
       
@@ -376,7 +357,6 @@ export const projectRouter = createTRPCRouter({
         
         const stats = getRepositoryStats(documents);
         
-        // Return the documents with stats
         return {
           files: documents.map(doc => ({
             path: doc.metadata?.source || '',
@@ -387,9 +367,10 @@ export const projectRouter = createTRPCRouter({
           stats,
           repository: project.githubUrl,
         };
-      } catch (error: any) {
+      } catch (error) {
         console.error("Failed to load repository files:", error);
-        throw new Error(`Failed to load repository files: ${error.message}`);
+        const message = error instanceof Error ? error.message : 'Unknown error';
+        throw new Error(`Failed to load repository files: ${message}`);
       }
     }),
     
@@ -509,7 +490,6 @@ export const projectRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      // Verify the user has access to this project
       const project = await ctx.db.project.findFirst({
         where: {
           id: input.projectId,
@@ -605,7 +585,6 @@ export const projectRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      // Verify the user has access to this project
       const project = await ctx.db.project.findFirst({
         where: {
           id: input.projectId,
@@ -656,7 +635,6 @@ export const projectRouter = createTRPCRouter({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      // Verify the user has access to this project
       const project = await ctx.db.project.findFirst({
         where: {
           id: input.projectId,
@@ -698,10 +676,7 @@ export const projectRouter = createTRPCRouter({
       // Simulate processing time
       await new Promise(resolve => setTimeout(resolve, 1000));
 
-      // In production, you would:
-      // - Create a background job
-      // - Process the data
-      // - Generate the file
+      // Process the data and generate the file
       // - Send email notification
 
       return {

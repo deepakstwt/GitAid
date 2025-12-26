@@ -12,7 +12,6 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import dynamic from 'next/dynamic';
 
-// Lazy load heavy components to improve initial page load
 const RepositoryLoader = dynamic(() => import("@/components/repository-loader"), {
   loading: () => (
     <div className="animate-pulse space-y-4">
@@ -83,7 +82,6 @@ import { api } from '@/trpc/react';
 import { toast } from 'sonner';
 import { DashboardWelcome } from '@/components/DashboardWelcome';
 
-// CommitLog Component
 interface CommitLogProps {
   project: any;
 }
@@ -125,13 +123,11 @@ const CommitLog: React.FC<CommitLogProps> = ({ project }) => {
     setError(null);
     
     try {
-      // First, try to get commits from database (with AI summaries)
       const dbCommits = await utils.project.getCommits.fetch({
         projectId: project.id,
       });
       
       if (dbCommits.length > 0) {
-        // Convert database commits to UI format
         const formattedCommits = dbCommits.map(commit => ({
           sha: commit.commitHash,
           commit: {
@@ -747,60 +743,66 @@ const handleQuestionSaved = () => {
           </div>
         )}
 
-        {/* Team Collaboration Section - Redesigned */}
+        {/* Team Collaboration Section - Improved UI */}
         <div className="w-full mb-12">
           <div className="luxury-card w-full">
-            <div className="p-8">
+            <div className="p-8 lg:p-10">
               {/* Header Section */}
-              <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-8 mb-8">
-                <div className="space-y-4 flex-1">
-                  <div className="flex items-center gap-4">
-                    <div className="relative">
-                      <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500/20 via-purple-500/20 to-pink-500/20 flex items-center justify-center border border-blue-400/30 shadow-lg">
-                        <Users className="w-7 h-7 text-blue-400" />
+              <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6 lg:gap-8 mb-10">
+                <div className="space-y-5 flex-1">
+                  <div className="flex items-start gap-5">
+                    <div className="relative flex-shrink-0">
+                      <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500/20 via-purple-500/20 to-pink-500/20 flex items-center justify-center border border-blue-400/30 shadow-lg backdrop-blur-sm">
+                        <Users className="w-8 h-8 text-blue-400" />
                       </div>
-                      <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-green-500 border-2 border-slate-900 animate-pulse"></div>
+                      <div className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-green-500 border-2 border-slate-900 shadow-lg">
+                        <div className="w-full h-full rounded-full bg-green-400 animate-ping opacity-75"></div>
+                      </div>
                     </div>
-                    <div>
-                      <h2 className="text-3xl font-bold bg-gradient-to-r from-white via-blue-100 to-purple-100 bg-clip-text text-transparent">
+                    <div className="flex-1 min-w-0">
+                      <h2 className="text-3xl lg:text-4xl font-bold bg-gradient-to-r from-white via-blue-100 to-purple-100 bg-clip-text text-transparent mb-3">
                         Team Collaboration
                       </h2>
-                      <div className="flex items-center gap-2 mt-2">
-                        <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
-                        <span className="text-sm font-medium text-green-400">Active Team</span>
-                        <div className="w-1 h-1 rounded-full bg-slate-500 mx-2"></div>
-                        <span className="text-sm text-slate-400">{teamMembers.length} members</span>
+                      <div className="flex items-center gap-3 flex-wrap">
+                        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-green-500/10 border border-green-500/20">
+                          <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+                          <span className="text-sm font-medium text-green-400">Active Team</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-slate-400">
+                          <Users className="w-4 h-4" />
+                          <span className="text-sm font-medium">{teamMembers.length} {teamMembers.length === 1 ? 'member' : 'members'}</span>
+                        </div>
                       </div>
                     </div>
                   </div>
                   
-                  <div className="space-y-2 max-w-2xl">
-                    <p className="text-lg font-medium text-slate-200">
+                  <div className="space-y-3 max-w-2xl pl-0 lg:pl-21">
+                    <p className="text-lg font-semibold text-slate-200">
                       Build, collaborate, and innovate together
                     </p>
-                    <p className="text-slate-400 leading-relaxed">
+                    <p className="text-slate-400 leading-relaxed text-base">
                       Invite talented developers, designers, and contributors to join your project journey. 
                       Work seamlessly with your team to create amazing things.
                     </p>
                   </div>
                 </div>
                 
-                <div className="flex flex-col sm:flex-row gap-4 items-stretch sm:items-center lg:items-start lg:pt-2">
+                <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center lg:items-start lg:pt-1">
                   <Button 
                     onClick={inviteTeamMember}
-                    className="group relative overflow-hidden bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 hover:from-blue-500 hover:via-purple-500 hover:to-pink-500 border-0 text-white shadow-xl hover:shadow-2xl rounded-2xl h-14 px-8 transition-all duration-300 transform hover:scale-105 min-w-[180px]"
+                    className="group relative overflow-hidden bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 hover:from-blue-500 hover:via-purple-500 hover:to-pink-500 border-0 text-white shadow-xl hover:shadow-2xl rounded-xl h-12 px-6 transition-all duration-300 transform hover:scale-[1.02] min-w-[160px]"
                   >
                     <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                    <UserPlus className="w-5 h-5 mr-3 group-hover:scale-110 transition-transform duration-200" />
-                    <span className="font-semibold text-base">Invite Member</span>
+                    <UserPlus className="w-4 h-4 mr-2 group-hover:scale-110 transition-transform duration-200" />
+                    <span className="font-semibold text-sm">Invite Member</span>
                   </Button>
                   
                   <Button 
                     variant="outline"
-                    className="border-slate-600/50 text-slate-300 hover:bg-slate-800/50 hover:border-slate-500 rounded-2xl h-14 px-6 transition-all duration-200 min-w-[140px]"
+                    className="border-slate-600/50 text-slate-300 hover:bg-slate-800/50 hover:border-slate-500 rounded-xl h-12 px-5 transition-all duration-200 min-w-[130px]"
                   >
                     <Users className="w-4 h-4 mr-2" />
-                    View All
+                    <span className="text-sm">View All</span>
                   </Button>
                 </div>
               </div>
@@ -871,83 +873,91 @@ const handleQuestionSaved = () => {
                     </Button>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-8">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {teamMembers.map((member, index) => (
-                      <div key={member.id} className="group relative">
-                        <div className="relative backdrop-blur-sm rounded-2xl p-8 border border-slate-700/50 hover:border-slate-600/50 transition-all duration-300 hover:shadow-xl hover:shadow-blue-500/10 hover:-translate-y-1 min-w-[320px]" style={{
-                          background: 'linear-gradient(135deg, hsl(222 25% 6%) 0%, hsl(222 20% 4%) 25%, hsl(222 25% 6%) 50%, hsl(222 20% 4%) 75%, hsl(222 25% 6%) 100%)'
-                        }}>
+                      <div 
+                        key={member.id} 
+                        className="group relative"
+                      >
+                        <div className="relative backdrop-blur-sm rounded-lg p-4 border border-slate-700/50 hover:border-blue-500/50 bg-slate-800/30 hover:bg-slate-800/50 transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/10 hover:-translate-y-0.5">
                           {/* Status indicator */}
-                          <div className="absolute top-4 right-4">
-                            <div className="w-3 h-3 rounded-full bg-green-500 animate-pulse"></div>
+                          <div className="absolute top-3 right-3 z-10">
+                            <div className="relative">
+                              <div className="w-2.5 h-2.5 rounded-full bg-green-500 shadow-lg shadow-green-500/50"></div>
+                              <div className="absolute inset-0 w-2.5 h-2.5 rounded-full bg-green-500 animate-ping opacity-75"></div>
+                            </div>
                           </div>
                           
-                          <div className="flex items-center space-x-4">
-                            <div className="relative">
-                              <Avatar className="w-12 h-12 rounded-xl border-2 border-slate-600/50">
+                          <div className="flex items-center gap-3">
+                            <div className="relative flex-shrink-0">
+                              <Avatar className="w-12 h-12 rounded-lg border-2 border-slate-600/50 group-hover:border-blue-500/50 transition-colors shadow-md">
                                 <AvatarImage src={member.avatar} />
-                                <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-500 text-white font-bold text-sm">
+                                <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-500 text-white font-semibold text-sm">
                                   {member.initials}
                                 </AvatarFallback>
                               </Avatar>
+                              <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-green-500 border-2 border-slate-900"></div>
                             </div>
                             
                             <div className="flex-1 min-w-0">
-                              <h4 className="font-semibold text-slate-200 truncate group-hover:text-white transition-colors">
+                              <h4 className="font-semibold text-sm text-slate-100 truncate group-hover:text-white transition-colors mb-0.5">
                                 {member.name}
                               </h4>
-                              <p className="text-sm text-slate-400 truncate">
+                              <p className="text-xs text-slate-400 mb-2">
                                 Team Member
                               </p>
-                              <div className="flex items-center gap-3 mt-2">
-                                <div className="flex items-center gap-1">
-                                  <div className="w-1.5 h-1.5 rounded-full bg-green-500"></div>
-                                  <span className="text-xs text-green-400 font-medium">Active</span>
-                                </div>
-                                <div className="w-1 h-1 rounded-full bg-slate-500"></div>
-                                <span className="text-xs text-slate-500">Contributor</span>
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <Badge variant="outline" className="text-xs px-1.5 py-0 border-green-500/30 bg-green-500/10 text-green-400 h-5">
+                                  <div className="w-1 h-1 rounded-full bg-green-500 mr-1"></div>
+                                  Active
+                                </Badge>
+                                <Badge variant="outline" className="text-xs px-1.5 py-0 border-slate-600/50 bg-slate-700/30 text-slate-400 h-5">
+                                  Contributor
+                                </Badge>
                               </div>
                             </div>
                           </div>
                           
                           {/* Hover effect overlay */}
-                          <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-blue-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
+                          <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-blue-500/5 via-purple-500/5 to-pink-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
                         </div>
                       </div>
                     ))}
                     
-                    {/* Add Member Card */}
-                    <div className="group relative">
-                      <div className="relative backdrop-blur-sm rounded-2xl p-8 border-2 border-dashed border-slate-600/50 hover:border-blue-500/50 transition-all duration-300 hover:shadow-xl hover:shadow-blue-500/10 hover:-translate-y-1 cursor-pointer min-w-[320px]" style={{
-                        background: 'linear-gradient(135deg, hsl(222 25% 6%) 0%, hsl(222 20% 4%) 25%, hsl(222 25% 6%) 50%, hsl(222 20% 4%) 75%, hsl(222 25% 6%) 100%)'
-                      }}>
-                        <div className="flex items-center space-x-4">
-                          <div className="relative">
-                            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500/20 to-purple-500/20 flex items-center justify-center border border-blue-400/30 group-hover:scale-110 transition-transform duration-200">
-                              <UserPlus className="w-6 h-6 text-blue-400" />
+                    {/* Add Member Card - Enhanced */}
+                    <div 
+                      className="group relative"
+                      onClick={inviteTeamMember}
+                    >
+                      <div className="relative backdrop-blur-sm rounded-lg p-4 border-2 border-dashed border-blue-500/40 hover:border-blue-500/70 bg-gradient-to-br from-blue-500/5 via-purple-500/5 to-pink-500/5 hover:from-blue-500/10 hover:via-purple-500/10 hover:to-pink-500/10 transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/20 hover:-translate-y-0.5 cursor-pointer">
+                        <div className="flex items-center gap-3">
+                          <div className="relative flex-shrink-0">
+                            <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-blue-500/20 via-purple-500/20 to-pink-500/20 flex items-center justify-center border-2 border-blue-400/40 group-hover:border-blue-400/60 group-hover:scale-105 transition-all duration-300 shadow-lg">
+                              <UserPlus className="w-6 h-6 text-blue-400 group-hover:text-blue-300 transition-colors" />
+                            </div>
+                            <div className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-blue-500/80 border-2 border-slate-900 shadow-lg">
+                              <div className="w-full h-full rounded-full bg-blue-400 animate-ping opacity-75"></div>
                             </div>
                           </div>
                           
                           <div className="flex-1 min-w-0">
-                            <h4 className="font-semibold text-slate-200 group-hover:text-white transition-colors truncate">
+                            <h4 className="font-semibold text-sm text-slate-200 group-hover:text-white transition-colors mb-0.5">
                               Add Member
                             </h4>
-                            <p className="text-sm text-slate-400 truncate">
+                            <p className="text-xs text-slate-400 group-hover:text-slate-300 transition-colors mb-2">
                               Invite to team
                             </p>
-                            <div className="flex items-center gap-3 mt-2">
-                              <div className="flex items-center gap-1">
-                                <div className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></div>
-                                <span className="text-xs text-blue-400 font-medium">Ready</span>
-                              </div>
-                              <div className="w-1 h-1 rounded-full bg-slate-500"></div>
-                              <span className="text-xs text-slate-500">Invite</span>
+                            <div className="flex items-center gap-1.5">
+                              <Badge variant="outline" className="text-xs px-1.5 py-0 border-blue-500/40 bg-blue-500/10 text-blue-400 h-5">
+                                <div className="w-1 h-1 rounded-full bg-blue-500 animate-pulse mr-1"></div>
+                                Ready
+                              </Badge>
                             </div>
                           </div>
                         </div>
                         
                         {/* Hover effect overlay */}
-                        <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-blue-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
+                        <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-blue-500/10 via-purple-500/10 to-pink-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
                       </div>
                     </div>
                   </div>
