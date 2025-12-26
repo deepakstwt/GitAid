@@ -26,7 +26,6 @@ const useRefetch = () => {
     refetchAll,
     refetchProjects,
     refetchSpecific,
-    // Default export for backward compatibility
     refetch: refetchAll
   };
 };

@@ -1,18 +1,10 @@
-/**
- * Run `build` or `dev` with `SKIP_ENV_VALIDATION` to skip env validation. This is especially useful
- * for Docker builds.
- */
 import "../backend/server/config/env.js";
 
 /** @type {import("next").NextConfig} */
 const config = {
-  // Faster development builds
   reactStrictMode: true,
   poweredByHeader: false,
   compress: true,
-
-  // Enable standalone output for Docker
-  output: process.env.DOCKER_BUILD === "true" ? "standalone" : undefined,
 
   // Development optimizations
   onDemandEntries: {

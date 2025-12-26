@@ -2,13 +2,9 @@ import { loadGitHubRepository } from './github-loader';
 import { summarizeDocument, getEmbeddings, cosineSimilarity, generateRAGAnswer } from './embeddings';
 import { db } from '@/server/db';
 
-/**
- * Process a GitHub repository through the complete RAG pipeline
- * @param projectId - Project ID to associate documents with
- * @param githubUrl - GitHub repository URL
- * @param githubToken - Optional GitHub access token
- * @returns Promise<ProcessingResult> - Results of the processing
- */
+const MAX_FILE_SIZE_BYTES = 50000;
+const TEXT_EXTENSIONS = ['ts', 'tsx', 'js', 'jsx', 'py', 'md', 'txt', 'json', 'yml', 'yaml', 'css', 'scss', 'html', 'vue', 'svelte'];
+
 export async function processRepositoryForRAG(
   projectId: string,
   githubUrl: string,
@@ -19,8 +15,6 @@ export async function processRepositoryForRAG(
   skippedCount: number;
   errors: string[];
 }> {
-  console.log(`🚀 Starting RAG processing for repository: ${githubUrl}`);
-  
   const results = {
     success: false,
     processedCount: 0,
@@ -29,41 +23,25 @@ export async function processRepositoryForRAG(
   };
 
   try {
-    // Step 1: Load repository files
-    console.log('📂 Loading repository files...');
     const documents = await loadGitHubRepository(githubUrl, githubToken);
-    console.log(`✅ Loaded ${documents.length} files`);
 
-    // Step 2: Filter relevant files (skip binary, very large, or irrelevant files)
     const relevantDocs = documents.filter(doc => {
       const source = doc.metadata?.source || '';
       const content = doc.pageContent || '';
       
-      // Skip empty files
       if (content.trim().length === 0) return false;
+      if (content.length > MAX_FILE_SIZE_BYTES) return false;
       
-      // Skip very large files (>50KB)
-      if (content.length > 50000) return false;
-      
-      // Skip binary-like files
       const extension = source.split('.').pop()?.toLowerCase();
-      const textExtensions = ['ts', 'tsx', 'js', 'jsx', 'py', 'md', 'txt', 'json', 'yml', 'yaml', 'css', 'scss', 'html', 'vue', 'svelte'];
-      
-      return extension ? textExtensions.includes(extension) : true;
+      return extension ? TEXT_EXTENSIONS.includes(extension) : true;
     });
 
-    console.log(`🔍 Filtered to ${relevantDocs.length} relevant files`);
-
-    // Step 3: Process each document
     for (const doc of relevantDocs) {
       try {
         const fileName = doc.metadata?.source || 'unknown';
         const filePath = fileName;
         const content = doc.pageContent || '';
 
-        console.log(`📝 Processing: ${fileName}`);
-
-        // Check if document already exists
         const existingDoc = await db.document.findUnique({
           where: {
             projectId_fileName: {
@@ -74,18 +52,13 @@ export async function processRepositoryForRAG(
         });
 
         if (existingDoc) {
-          console.log(`⏭️  Skipping ${fileName} - already exists`);
           results.skippedCount++;
           continue;
         }
 
-        // Step 3a: Generate summary
         const summary = await summarizeDocument(content, fileName);
-        
-        // Step 3b: Generate embeddings
         const embedding = await getEmbeddings(summary);
         
-        // Step 3c: Store in database
         await db.document.create({
           data: {
             projectId,
@@ -93,11 +66,9 @@ export async function processRepositoryForRAG(
             filePath,
             content,
             summary,
-            embedding: JSON.stringify(embedding) // Store as JSON string
+            embedding: JSON.stringify(embedding)
           }
         });
-
-        console.log(`✅ Processed: ${fileName}`);
         results.processedCount++;
 
         // Small delay to avoid rate limiting
@@ -145,12 +116,8 @@ export async function queryRAG(
   error?: string;
 }> {
   try {
-    console.log(`🔍 RAG Query: "${question}"`);
-
-    // Step 1: Generate embedding for the question
     const questionEmbedding = await getEmbeddings(question);
 
-    // Step 2: Retrieve all documents for the project
     const documents = await db.document.findMany({
       where: { projectId },
       select: {
@@ -169,7 +136,6 @@ export async function queryRAG(
       };
     }
 
-    // Step 3: Calculate similarities and find top-k
     const similarities = documents.map(doc => {
       try {
         const docEmbedding = JSON.parse(doc.embedding || '[]') as number[];

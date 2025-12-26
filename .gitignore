@@ -18,7 +18,7 @@ db.sqlite
 out/
 next-env.d.ts
 
-# production
+# build
 build
 
 # misc
@@ -36,8 +36,6 @@ yarn-error.log*
 ../backend/.env
 ../backend/.env*.local
 
-# vercel
-.vercel
 
 # typescript
 *.tsbuildinfo

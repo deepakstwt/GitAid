@@ -14,12 +14,8 @@ export async function getGeminiClient(): Promise<GoogleGenerativeAI> {
   return new GoogleGenerativeAI(env.GEMINI_API_KEY);
 }
 
-/**
- * Summarize a document/file content for RAG pipeline
- * @param content - The file content to summarize
- * @param fileName - The name of the file for context
- * @returns Promise<string> - Concise technical summary
- */
+const MAX_SUMMARY_LENGTH = 500;
+
 export async function summarizeDocument(content: string, fileName?: string): Promise<string> {
   try {
     const genAI = await getGeminiClient();
@@ -47,10 +43,9 @@ ${content}
     const response = await result.response;
     const summary = response.text();
     
-    // Clean up and ensure reasonable length
     const cleanSummary = summary.trim();
-    if (cleanSummary.length > 500) {
-      return cleanSummary.substring(0, 497) + '...';
+    if (cleanSummary.length > MAX_SUMMARY_LENGTH) {
+      return cleanSummary.substring(0, MAX_SUMMARY_LENGTH - 3) + '...';
     }
     
     return cleanSummary;
@@ -62,11 +57,6 @@ ${content}
   }
 }
 
-/**
- * Generate embeddings for text using Gemini embedding model
- * @param text - Text to convert to embeddings
- * @returns Promise<number[]> - Embedding vector
- */
 export async function getEmbeddings(text: string): Promise<number[]> {
   try {
     const genAI = await getGeminiClient();
@@ -82,18 +72,10 @@ export async function getEmbeddings(text: string): Promise<number[]> {
     return embedding.values;
   } catch (error) {
     console.error('Error generating embeddings:', error);
-    
-    // Fallback to a simple hash-based embedding (for development)
     return generateFallbackEmbedding(text);
   }
 }
 
-/**
- * Calculate cosine similarity between two embedding vectors
- * @param a - First embedding vector
- * @param b - Second embedding vector
- * @returns number - Similarity score (0-1, higher is more similar)
- */
 export function cosineSimilarity(a: number[], b: number[]): number {
   if (a.length !== b.length) {
     throw new Error('Vectors must have the same length');
@@ -121,12 +103,6 @@ export function cosineSimilarity(a: number[], b: number[]): number {
   return dotProduct / (normA * normB);
 }
 
-/**
- * Generate answer using retrieved context and question
- * @param question - User's question
- * @param context - Retrieved document summaries
- * @returns Promise<string> - AI-generated answer
- */
 export async function generateRAGAnswer(question: string, context: string[]): Promise<string> {
   try {
     const genAI = await getGeminiClient();
@@ -162,59 +138,50 @@ Answer:
   }
 }
 
-/**
- * Fallback summary generation when AI is unavailable
- */
+const FALLBACK_EMBEDDING_DIMENSION = 384;
+
 function generateDocumentFallbackSummary(content: string, fileName?: string): string {
   const lines = content.split('\n');
   const totalLines = lines.length;
   const extension = fileName?.split('.').pop()?.toLowerCase() || 'unknown';
   
-  let summary = `📄 ${fileName || 'File'} (${extension.toUpperCase()}) - ${totalLines} lines. `;
+  let summary = `${fileName || 'File'} (${extension.toUpperCase()}) - ${totalLines} lines. `;
   
-  // Basic pattern detection
   const lowerContent = content.toLowerCase();
   
   if (extension === 'ts' || extension === 'tsx' || extension === 'js' || extension === 'jsx') {
     if (lowerContent.includes('function') || lowerContent.includes('=>')) {
-      summary += '⚡ Contains function definitions. ';
+      summary += 'Contains function definitions. ';
     }
     if (lowerContent.includes('class ')) {
-      summary += '🏗️ Defines classes. ';
+      summary += 'Defines classes. ';
     }
     if (lowerContent.includes('import ') || lowerContent.includes('require(')) {
-      summary += '📦 Has dependencies. ';
+      summary += 'Has dependencies. ';
     }
     if (lowerContent.includes('export ')) {
-      summary += '📤 Exports functionality. ';
+      summary += 'Exports functionality. ';
     }
   } else if (extension === 'md') {
-    summary += '📚 Documentation file. ';
+    summary += 'Documentation file. ';
   } else if (extension === 'json') {
-    summary += '⚙️ Configuration or data file. ';
+    summary += 'Configuration or data file. ';
   } else if (extension === 'css') {
-    summary += '🎨 Styling definitions. ';
+    summary += 'Styling definitions. ';
   }
   
   return summary + '(Basic analysis - AI unavailable)';
 }
 
-/**
- * Simple fallback embedding generation (for development)
- */
 function generateFallbackEmbedding(text: string): number[] {
-  // Create a simple hash-based embedding of fixed size (384 dimensions)
-  const dimension = 384;
+  const dimension = FALLBACK_EMBEDDING_DIMENSION;
   const embedding = new Array(dimension).fill(0);
   
-  // Simple hash function to generate consistent embeddings
   for (let i = 0; i < text.length; i++) {
     const char = text.charCodeAt(i);
     const index = char % dimension;
-    embedding[index] += char / 1000; // Normalize
+    embedding[index] += char / 1000;
   }
-  
-  // Normalize the vector
   const norm = Math.sqrt(embedding.reduce((sum, val) => sum + val * val, 0));
   if (norm > 0) {
     for (let i = 0; i < embedding.length; i++) {

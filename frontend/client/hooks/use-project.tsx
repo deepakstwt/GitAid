@@ -8,22 +8,11 @@ const useProject = () => {
   const { data: projects, refetch: refetchProjects, isLoading, error } = api.project.getProjects.useQuery(
     undefined,
     {
-      enabled: !!user && isLoaded, // Only run the query when user is authenticated and loaded
+      enabled: !!user && isLoaded,
     }
   );
   const [projectId, setProjectId] = useLocalStorage('dionysus-projectId', '');
   const project = projects?.find(project => project.id === projectId);
-  
-  // Debug logging
-  console.log("useProject hook state:", {
-    user: user ? "authenticated" : "not authenticated",
-    isLoaded,
-    projects: projects?.length || 0,
-    isLoading,
-    error: error?.message,
-    projectId,
-    project: project?.name || "none selected"
-  });
   
   return {
     projects,
