@@ -109,9 +109,9 @@ export function DashboardWelcome({ userName }: { userName?: string }) {
                 Create Your First Project
               </Button>
             </Link>
-            <Button 
-              size="lg" 
-              variant="outline" 
+            <Button
+              size="lg"
+              variant="outline"
               className="border-white/20 text-white hover:bg-white/10 backdrop-blur-sm"
               onClick={() => setShowTour(true)}
             >
@@ -128,38 +128,38 @@ export function DashboardWelcome({ userName }: { userName?: string }) {
             <p className="text-gray-400">Follow these steps to get the most out of GitAid</p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
             {quickStartSteps.map((step, index) => (
-              <Card 
+              <Card
                 key={index}
-                className="group relative overflow-hidden bg-gradient-to-br from-white/5 to-white/[0.02] border-white/10 backdrop-blur-sm hover:border-white/20 transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl"
+                className="group relative overflow-hidden premium-glass border-white/5 backdrop-blur-xl hover:border-white/20 transition-all duration-500 hover:-translate-y-3 hover:shadow-[0_30px_60px_-15px_rgba(0,0,0,0.6)] rounded-[2.5rem]"
               >
-                <div className={`absolute inset-0 bg-gradient-to-br ${step.color} opacity-0 group-hover:opacity-10 transition-opacity`} />
-                
-                <CardContent className="p-8 relative z-10">
-                  <div className="flex items-start gap-4 mb-6">
-                    <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${step.color} flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform`}>
-                      <step.icon className="w-6 h-6 text-white" />
+                <div className={`absolute inset-0 bg-gradient-to-br ${step.color} opacity-0 group-hover:opacity-[0.03] transition-opacity`} />
+
+                <CardContent className="p-10 relative z-10">
+                  <div className="flex flex-col items-center text-center gap-6 mb-8">
+                    <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${step.color} flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform shadow-2xl shadow-indigo-500/20`}>
+                      <step.icon className="w-8 h-8 text-white" />
                     </div>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="text-sm font-bold text-gray-400">STEP {index + 1}</span>
+                    <div>
+                      <div className="flex items-center justify-center gap-2 mb-3">
+                        <span className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em]">Step 0{index + 1}</span>
                       </div>
-                      <h3 className="text-xl font-bold text-white mb-2">{step.title}</h3>
-                      <p className="text-gray-400 text-sm leading-relaxed">
+                      <h3 className="text-2xl font-bold text-white mb-3 tracking-tight">{step.title}</h3>
+                      <p className="text-zinc-400 text-sm leading-relaxed max-w-[240px] mx-auto">
                         {step.description}
                       </p>
                     </div>
                   </div>
-                  
+
                   {step.href && (
                     <Link href={step.href}>
-                      <Button 
-                        className="w-full bg-white/5 hover:bg-white/10 text-white border border-white/10"
+                      <Button
+                        className="w-full h-12 bg-white/5 hover:bg-white/10 text-white border border-white/10 rounded-2xl font-bold transition-all group-hover:scale-[1.02]"
                         variant="outline"
                       >
                         {step.action}
-                        <ArrowRight className="ml-2 w-4 h-4" />
+                        <ArrowRight className="ml-2 w-4 h-4 transition-transform group-hover:translate-x-1" />
                       </Button>
                     </Link>
                   )}
@@ -178,7 +178,7 @@ export function DashboardWelcome({ userName }: { userName?: string }) {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
             {features.map((feature, index) => (
-              <Card 
+              <Card
                 key={index}
                 className="group bg-gradient-to-br from-white/5 to-white/[0.02] border-white/10 backdrop-blur-sm hover:border-blue-500/30 transition-all duration-300 hover:-translate-y-1"
               >
@@ -204,7 +204,7 @@ export function DashboardWelcome({ userName }: { userName?: string }) {
                     <Lightbulb className="w-10 h-10 text-blue-400" />
                   </div>
                 </div>
-                
+
                 <div className="flex-1 text-center md:text-left">
                   <h3 className="text-2xl font-bold text-white mb-2">Need Help Getting Started?</h3>
                   <p className="text-gray-300 mb-4">
@@ -234,11 +234,11 @@ export function DashboardWelcome({ userName }: { userName?: string }) {
                 <h3 className="text-lg font-bold text-white">Your Progress</h3>
                 <span className="text-sm text-gray-400">0% Complete</span>
               </div>
-              
+
               <div className="w-full bg-white/5 rounded-full h-3 mb-4">
                 <div className="bg-gradient-to-r from-blue-500 to-purple-500 h-3 rounded-full transition-all duration-500" style={{ width: '0%' }} />
               </div>
-              
+
               <div className="space-y-3">
                 <div className="flex items-center gap-3 text-sm text-gray-400">
                   <div className="w-5 h-5 rounded-full border-2 border-gray-600 flex items-center justify-center flex-shrink-0" />

@@ -14,6 +14,19 @@ const config = {
     pagesBufferLength: 2,
   },
 
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "img.clerk.com",
+      },
+      {
+        protocol: "https",
+        hostname: "images.unsplash.com",
+      },
+    ],
+  },
+
   webpack: (config, { dev, isServer }) => {
     // Development optimizations
     if (dev && !isServer) {

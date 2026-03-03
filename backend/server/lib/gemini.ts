@@ -6,11 +6,11 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
  */
 export async function getGeminiClient(): Promise<GoogleGenerativeAI> {
   const { env } = await import('@/server/config/env');
-  
+
   if (!env.GEMINI_API_KEY) {
     throw new Error('GEMINI_API_KEY environment variable is not set');
   }
-  
+
   return new GoogleGenerativeAI(env.GEMINI_API_KEY);
 }
 
@@ -22,8 +22,8 @@ export async function getGeminiClient(): Promise<GoogleGenerativeAI> {
 export async function summarizeCommit(diff: string): Promise<string> {
   try {
     const genAI = await getGeminiClient();
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
-    
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
     const systemPrompt = `
 You are an expert software engineer analyzing Git commit diffs. Your task is to provide concise, insightful summaries of code changes.
 
@@ -59,21 +59,21 @@ Analyze this commit diff:
 
 ${diff}
 `;
-    
+
     const result = await model.generateContent(systemPrompt);
     const response = await result.response;
     const summary = response.text();
-    
+
     // Clean up the response and ensure it's concise
     const cleanSummary = summary.trim();
     if (cleanSummary.length > 300) {
       return cleanSummary.substring(0, 297) + '...';
     }
-    
+
     return cleanSummary;
   } catch (error) {
     console.error('Error generating commit summary with Gemini:', error);
-    
+
     // Fallback to basic pattern analysis
     return generateFallbackSummary(diff);
   }
@@ -86,13 +86,13 @@ ${diff}
  */
 function generateFallbackSummary(diff: string): string {
   const lowerDiff = diff.toLowerCase();
-  
+
   // Count additions and deletions
   const additions = (diff.match(/^\+/gm) || []).length;
   const deletions = (diff.match(/^-/gm) || []).length;
-  
+
   let summary = "📝 Code changes detected. ";
-  
+
   // Simple pattern matching as fallback
   if (lowerDiff.includes('fix') || lowerDiff.includes('bug') || lowerDiff.includes('error')) {
     summary += `🐛 Bug fix with ${additions} additions and ${deletions} deletions.`;
@@ -111,7 +111,7 @@ function generateFallbackSummary(diff: string): string {
   } else {
     summary += `⚡ General improvements: +${additions} -${deletions} lines.`;
   }
-  
+
   return summary + " (AI analysis unavailable)";
 }
 
@@ -134,9 +134,9 @@ index 1234567..abcdefg 100644
    return authenticateUser(email, password);
  }
 `;
-    
+
     const testSummary = await summarizeCommit(sampleDiff);
-    console.log Gemini AI test successful:', testSummary);
+    console.log('Gemini AI test successful:', testSummary);
     return true;
   } catch (error) {
     console.error('❌ Gemini AI test failed:', error);

@@ -5,8 +5,16 @@ import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { FileText, Code, Zap, Search, FileCode, Copy, Check } from "lucide-react";
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import dynamic from "next/dynamic";
+
+const SyntaxHighlighter = dynamic(
+  async () => {
+    const mod = await import('react-syntax-highlighter');
+    const style = await import('react-syntax-highlighter/dist/esm/styles/prism/vsc-dark-plus');
+    return (props: any) => <mod.Prism {...props} style={style.default} />;
+  },
+  { ssr: false }
+);
 
 interface FileReference {
   fileName: string;
@@ -78,30 +86,26 @@ export function CodeReferences({ fileReferences }: CodeReferencesProps) {
             <button
               key={index}
               onClick={() => setSelectedTab(index)}
-              className={`group relative p-4 rounded-xl border-2 transition-all duration-200 text-left ${
-                selectedTab === index
-                  ? 'bg-gradient-to-br from-blue-600/20 to-purple-600/20 border-blue-500/50 shadow-lg shadow-blue-500/10'
-                  : 'bg-gray-900/40 border-white/10 hover:border-white/20 hover:bg-gray-900/60'
-              }`}
+              className={`group relative p-4 rounded-xl border-2 transition-all duration-200 text-left ${selectedTab === index
+                ? 'bg-gradient-to-br from-blue-600/20 to-purple-600/20 border-blue-500/50 shadow-lg shadow-blue-500/10'
+                : 'bg-gray-900/40 border-white/10 hover:border-white/20 hover:bg-gray-900/60'
+                }`}
             >
               <div className="flex items-start gap-3">
-                <div className={`p-2 rounded-lg flex-shrink-0 ${
-                  selectedTab === index
-                    ? 'bg-gradient-to-br from-blue-500 to-purple-500'
-                    : 'bg-gray-800/60'
-                }`}>
-                  <FileText className={`w-4 h-4 ${
-                    selectedTab === index ? 'text-white' : 'text-gray-400'
-                  }`} />
+                <div className={`p-2 rounded-lg flex-shrink-0 ${selectedTab === index
+                  ? 'bg-gradient-to-br from-blue-500 to-purple-500'
+                  : 'bg-gray-800/60'
+                  }`}>
+                  <FileText className={`w-4 h-4 ${selectedTab === index ? 'text-white' : 'text-gray-400'
+                    }`} />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className={`text-sm font-semibold mb-2 truncate ${
-                    selectedTab === index ? 'text-white' : 'text-gray-300'
-                  }`}>
+                  <p className={`text-sm font-semibold mb-2 truncate ${selectedTab === index ? 'text-white' : 'text-gray-300'
+                    }`}>
                     {file.fileName}
                   </p>
                   <div className="flex items-center gap-2">
-                    <Badge 
+                    <Badge
                       className={`bg-gradient-to-r ${getSimilarityColor(file.similarity)} text-white text-xs px-2 py-0.5 font-semibold`}
                     >
                       {similarityPercent}%
@@ -110,7 +114,7 @@ export function CodeReferences({ fileReferences }: CodeReferencesProps) {
                   </div>
                 </div>
               </div>
-              
+
               {/* Active indicator */}
               {selectedTab === index && (
                 <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
@@ -125,9 +129,9 @@ export function CodeReferences({ fileReferences }: CodeReferencesProps) {
         <div className="flex-1 flex flex-col min-h-0 space-y-4">
           <Tabs value={selectedTab.toString()} className="flex-1 flex flex-col min-h-0">
             {fileReferences.map((file, index) => (
-              <TabsContent 
-                key={index} 
-                value={index.toString()} 
+              <TabsContent
+                key={index}
+                value={index.toString()}
                 className="flex-1 flex flex-col min-h-0 mt-0 space-y-4"
               >
                 {/* File Header */}
@@ -141,7 +145,7 @@ export function CodeReferences({ fileReferences }: CodeReferencesProps) {
                       <p className="text-xs text-gray-400">Code reference file</p>
                     </div>
                   </div>
-                  <Badge 
+                  <Badge
                     className={`bg-gradient-to-r ${getSimilarityColor(file.similarity)} text-white px-3 py-1 font-semibold`}
                   >
                     {Math.round(file.similarity * 100)}% similarity
@@ -209,7 +213,6 @@ export function CodeReferences({ fileReferences }: CodeReferencesProps) {
                         <div className="min-w-max">
                           <SyntaxHighlighter
                             language={getFileExtension(file.fileName)}
-                            style={vscDarkPlus}
                             customStyle={{
                               margin: 0,
                               padding: '1rem',

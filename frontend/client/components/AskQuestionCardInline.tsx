@@ -8,12 +8,14 @@ import { Dialog, DialogContent, DialogClose, DialogTitle } from "@/components/ui
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, MessageSquare, Send, Search, User, Clock, XIcon, Save, FileText } from "lucide-react";
-import { CodeReferences } from "./CodeReferencesSimple";
+import dynamic from "next/dynamic";
 import useProject from "@/hooks/use-project";
 import { api } from "@/trpc/react";
 import { toast } from "sonner";
-import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+
+const CodeReferences = dynamic(() => import("./CodeReferencesSimple").then((mod) => mod.CodeReferences), { ssr: false });
+const ReactMarkdown = dynamic(() => import("react-markdown"), { ssr: false });
 import { format } from "date-fns";
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -36,7 +38,7 @@ export function AskQuestionCardInline({ onQuestionSaved }: AskQuestionCardInline
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const isMobile = useIsMobile();
-  
+
   // Prevent body scrolling when modal is open
   useEffect(() => {
     if (isDialogOpen) {
@@ -44,7 +46,7 @@ export function AskQuestionCardInline({ onQuestionSaved }: AskQuestionCardInline
     } else {
       document.body.style.overflow = '';
     }
-    
+
     return () => {
       document.body.style.overflow = '';
     };
@@ -67,8 +69,8 @@ export function AskQuestionCardInline({ onQuestionSaved }: AskQuestionCardInline
       const errorMsg = typeof error === 'string'
         ? error
         : (error && typeof (error as any).message === 'string'
-            ? (error as any).message
-            : 'Unknown error');
+          ? (error as any).message
+          : 'Unknown error');
       console.error("Query failed:", errorMsg);
       toast.error("Failed to process your question. " + errorMsg);
       setAnswer("");
@@ -76,7 +78,7 @@ export function AskQuestionCardInline({ onQuestionSaved }: AskQuestionCardInline
       setIsDialogOpen(false);
     },
   });
-  
+
   // TRPC mutation for saving the question
   const saveQuestionMutation = api.rag.queryPGVector.useMutation({
     onSuccess: () => {
@@ -113,10 +115,10 @@ export function AskQuestionCardInline({ onQuestionSaved }: AskQuestionCardInline
       console.error('Error asking question:', errorMsg);
     }
   };
-  
+
   const handleSaveQuestion = async () => {
     if (!project?.id || !question.trim()) return;
-    
+
     setIsSaving(true);
     try {
       await saveQuestionMutation.mutateAsync({
@@ -130,7 +132,7 @@ export function AskQuestionCardInline({ onQuestionSaved }: AskQuestionCardInline
       setIsSaving(false);
     }
   };
-  
+
   const handleCloseDialog = () => {
     setIsDialogOpen(false);
   };
@@ -140,7 +142,7 @@ export function AskQuestionCardInline({ onQuestionSaved }: AskQuestionCardInline
     setQuestion("");
     setIsDialogOpen(false);
     setIsSaving(false);
-    
+
     // Call the parent callback if provided
     if (onQuestionSaved) {
       onQuestionSaved();
@@ -177,8 +179,8 @@ export function AskQuestionCardInline({ onQuestionSaved }: AskQuestionCardInline
                     className="pl-10"
                   />
                 </div>
-                <Button 
-                  type="submit" 
+                <Button
+                  type="submit"
                   disabled={!question.trim() || queryMutation.isPending}
                 >
                   {queryMutation.isPending ? (
@@ -208,18 +210,18 @@ export function AskQuestionCardInline({ onQuestionSaved }: AskQuestionCardInline
           <DialogTitle className="sr-only">Question Details</DialogTitle>
           {/* Header */}
           <div className="bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 p-6 border-b border-gray-200 relative">
-            <DialogClose 
+            <DialogClose
               className="absolute right-4 top-4 p-2 rounded-full bg-white/90 text-gray-500 transition-colors shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               onClick={handleCloseDialog}
             >
               <XIcon className="h-5 w-5" />
               <span className="sr-only">Close dialog</span>
             </DialogClose>
-            
+
             <h2 className="text-2xl font-bold text-gray-900 mb-4 pr-10 leading-tight">
               {question}
             </h2>
-            
+
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3 text-sm">
                 <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center shadow-md">
@@ -229,7 +231,7 @@ export function AskQuestionCardInline({ onQuestionSaved }: AskQuestionCardInline
                 <span className="text-gray-400">•</span>
                 <span className="text-gray-600 font-medium">{format(new Date(), 'PPp')}</span>
               </div>
-              
+
               <Button
                 variant="outline"
                 size="sm"
@@ -242,7 +244,7 @@ export function AskQuestionCardInline({ onQuestionSaved }: AskQuestionCardInline
               </Button>
             </div>
           </div>
-          
+
           {/* Content Area with Scrolling */}
           <div className="flex-1 overflow-hidden bg-gradient-to-br from-gray-50 via-slate-50 to-gray-100">
             <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-2'} gap-4 sm:gap-6 p-4 sm:p-6 md:p-8 h-full overflow-y-auto custom-scrollbar max-h-[calc(90vh-120px)] transition-all duration-300`}>
@@ -257,7 +259,7 @@ export function AskQuestionCardInline({ onQuestionSaved }: AskQuestionCardInline
                     <p className="text-xs text-gray-600">Generated response with relevant insights</p>
                   </div>
                 </div>
-                
+
                 <div className="flex-1 bg-white border border-gray-100 rounded-xl shadow-lg overflow-hidden">
                   <ScrollArea className="h-full p-4 sm:p-6 max-h-[calc(90vh-250px)]">
                     <div className="prose prose-base max-w-none prose-headings:text-gray-900 prose-p:text-gray-700 prose-strong:text-gray-900 prose-pre:overflow-x-auto">
@@ -281,7 +283,7 @@ export function AskQuestionCardInline({ onQuestionSaved }: AskQuestionCardInline
                       <p className="text-xs text-gray-600">Source code files with similarity scores</p>
                     </div>
                   </div>
-                  
+
                   <div className="flex-1 bg-white border border-gray-100 rounded-xl shadow-lg overflow-hidden">
                     <ScrollArea className="h-full p-4 sm:p-6 max-h-[calc(90vh-250px)]">
                       <CodeReferences fileReferences={fileReferences} />
