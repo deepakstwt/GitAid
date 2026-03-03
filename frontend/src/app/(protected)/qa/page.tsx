@@ -1,18 +1,21 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import dynamic from "next/dynamic";
 import { format, formatDistanceToNow } from "date-fns";
-import { AskQuestionCardInline } from "@/components/AskQuestionCardInline";
-import { CodeReferences } from "@/components/CodeReferencesSimple";
 import useProject from "@/hooks/use-project";
 import { api } from "@/trpc/react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import MDEditor from "@uiw/react-md-editor";
 import { Loader2, MessageSquare, User, RefreshCcw, Search, X as XIcon } from "lucide-react";
 import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
+
+const AskQuestionCardInline = dynamic(() => import("@/components/AskQuestionCardInline").then((mod) => mod.AskQuestionCardInline), { ssr: false });
+const CodeReferences = dynamic(() => import("@/components/CodeReferencesSimple").then((mod) => mod.CodeReferences), { ssr: false });
+
+import Image from "next/image";
 
 interface FileReference {
   fileName: string;
@@ -35,6 +38,10 @@ interface Question {
     emailAddress: string;
   };
 }
+
+import remarkGfm from "remark-gfm";
+
+const ReactMarkdown = dynamic(() => import("react-markdown"), { ssr: false });
 
 const QAPage = () => {
   const { project } = useProject();
@@ -223,7 +230,7 @@ const QAPage = () => {
                 {/* User Avatar */}
                 <div className="flex-shrink-0">
                   {question.user.imageUrl ? (
-                    <img src={question.user.imageUrl} alt="User avatar" className="w-8 h-8 rounded-full" />
+                    <Image src={question.user.imageUrl} alt="User avatar" width={32} height={32} className="rounded-full" />
                   ) : (
                     <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
                       <User className="h-4 w-4 text-white" />
@@ -261,18 +268,16 @@ const QAPage = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           {/* Overlay */}
           <div
-            className={`fixed inset-0 bg-black/80 backdrop-blur-md transition-all duration-300 ease-in-out ${
-              isDialogOpen ? "opacity-100" : "opacity-0 pointer-events-none"
-            }`}
+            className={`fixed inset-0 bg-black/80 backdrop-blur-md transition-all duration-300 ease-in-out ${isDialogOpen ? "opacity-100" : "opacity-0 pointer-events-none"
+              }`}
             onClick={handleDialogClose}
             aria-hidden="true"
           />
 
           {/* Modal Container */}
           <div
-            className={`fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 md:p-8 transition-all duration-300 ease-in-out ${
-              isDialogOpen ? "opacity-100 scale-100" : "opacity-0 scale-95 pointer-events-none"
-            }`}
+            className={`fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 md:p-8 transition-all duration-300 ease-in-out ${isDialogOpen ? "opacity-100 scale-100" : "opacity-0 scale-95 pointer-events-none"
+              }`}
             role="dialog"
             aria-modal="true"
             aria-labelledby="question-detail-title"
@@ -296,10 +301,12 @@ const QAPage = () => {
 
                 <div className="flex items-center gap-4">
                   {selectedQuestion.user.imageUrl ? (
-                    <img
+                    <Image
                       src={selectedQuestion.user.imageUrl}
                       alt="User avatar"
-                      className="w-10 h-10 rounded-full ring-2 ring-blue-500/30 shadow-lg"
+                      width={40}
+                      height={40}
+                      className="rounded-full ring-2 ring-blue-500/30 shadow-lg"
                     />
                   ) : (
                     <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-full flex items-center justify-center shadow-lg">
@@ -339,11 +346,13 @@ const QAPage = () => {
 
                     <div className="flex-1 bg-gray-900/60 backdrop-blur-sm border border-white/10 rounded-xl shadow-xl overflow-hidden">
                       <div className="h-full overflow-auto p-6 custom-scrollbar">
-                        <div 
+                        <div
                           className="prose prose-invert prose-base max-w-none prose-headings:text-white prose-p:text-gray-200 prose-strong:text-white prose-code:text-blue-300 prose-pre:bg-black/40 prose-pre:border prose-pre:border-white/10 prose-a:text-blue-400 prose-li:text-gray-200"
                           data-color-mode="dark"
                         >
-                          <MDEditor.Markdown source={selectedQuestion.answer} />
+                          <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                            {selectedQuestion.answer}
+                          </ReactMarkdown>
                         </div>
                       </div>
                     </div>
@@ -351,8 +360,8 @@ const QAPage = () => {
 
                   {/* File References Section - Right Side (2/5 width) */}
                   {selectedQuestion.fileReferences &&
-                  Array.isArray(selectedQuestion.fileReferences) &&
-                  selectedQuestion.fileReferences.length > 0 ? (
+                    Array.isArray(selectedQuestion.fileReferences) &&
+                    selectedQuestion.fileReferences.length > 0 ? (
                     <div className="flex flex-col col-span-2">
                       <div className="flex items-center gap-3 mb-4">
                         <div className="p-2 bg-gradient-to-br from-purple-600 to-pink-600 rounded-lg shadow-lg">

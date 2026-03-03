@@ -20,46 +20,17 @@ interface FileReference {
   similarity: number;
 }
 
-export interface CreateMeetingInput {
-  name: string;
-  audioUrl: string;
-  projectId: string;
-}
 
-export async function createMeeting({ name, audioUrl, projectId }: CreateMeetingInput) {
-  const session = await auth();
-  if (!session?.userId) {
-    return { success: false, error: 'Not authenticated' };
-  }
-
-  try {
-    const meeting = await db.meeting.create({
-      data: {
-        name,
-        audioUrl,
-        projectId,
-        userId: session.userId,
-        status: 'PROCESSING',
-      },
-    });
-
-    revalidatePath('/meetings');
-    return { success: true, meeting };
-  } catch (error) {
-    console.error('Error creating meeting:', error);
-    return { success: false, error: 'Failed to create meeting' };
-  }
-}
 
 export async function askQuestion(projectId: string, question: string) {
   const { userId } = await auth();
   if (!userId) {
     throw new Error('User not authenticated');
   }
-  
+
   try {
     const questionEmbedding = await getEmbeddings(question);
-    
+
     const similarDocs = await db.$queryRaw`
       SELECT 
         "fileName",
@@ -113,7 +84,7 @@ Answer:`;
         fileReferences: similarDocs as any, // Cast to satisfy Prisma Json type
       },
     });
-    console.log Question processing completed');
+    console.log('Question processing completed');
 
     return {
       answer: fullAnswer,
@@ -127,52 +98,3 @@ Answer:`;
 
 
 
-export async function getMeetings(projectId: string) {
-  try {
-    const session = await auth();
-    if (!session?.userId) {
-      return { success: false, error: 'Not authenticated' };
-    }
-
-    if (!projectId) {
-      return { success: false, error: 'No project selected' };
-    }
-
-    const meetings = await db.meeting.findMany({
-      where: {
-        projectId,
-        userId: session.userId,
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-      select: {
-        id: true,
-        name: true,
-        audioUrl: true,
-        transcription: true,
-        summary: true,
-        status: true,
-        createdAt: true,
-      },
-    });
-
-    // Ensure status is valid, default to PROCESSING if not
-    const normalizedMeetings = meetings.map(meeting => ({
-      ...meeting,
-      status: (meeting.status === 'PROCESSING' || meeting.status === 'COMPLETED' || meeting.status === 'FAILED') 
-        ? meeting.status 
-        : 'PROCESSING' as const
-    }));
-
-    return { success: true, meetings: normalizedMeetings };
-  } catch (error) {
-    console.error('Error fetching meetings:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-    console.error('Detailed error:', errorMessage);
-    return { 
-      success: false, 
-      error: `Failed to fetch meetings: ${errorMessage}` 
-    };
-  }
-}

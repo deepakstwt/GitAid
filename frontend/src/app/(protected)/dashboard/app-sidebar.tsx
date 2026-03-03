@@ -1,360 +1,202 @@
 'use client';
 
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
-  SidebarHeader,
-  SidebarMenuItem,
-  SidebarMenuButton,
-  SidebarMenu,
-  useSidebar,
-} from "@/components/ui/sidebar";
-
+import Link from 'next/link';
+import { usePathname, useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 import {
   LayoutDashboard,
   Bot,
-  Presentation,
-  CreditCard,
   Plus,
-  Menu,
-  X,
-} from "lucide-react";
+  GitBranch,
+} from 'lucide-react';
+import { cn } from '@/lib/utils';
+import useProject from '@/hooks/use-project';
+import { api } from "@/trpc/react";
+import dynamic from 'next/dynamic';
 
-import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import useProject from "@/hooks/use-project";
-import { useState, useEffect } from "react";
+// Lazy-load UserButton to avoid SSR hydration issues
+const UserButton = dynamic(
+  () => import('@clerk/nextjs').then((m) => ({ default: m.UserButton })),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="w-8 h-8 rounded-full bg-zinc-800 animate-pulse" />
+    ),
+  }
+);
 
-const items = [
-  {
-    title: "Dashboard",
-    url: "/dashboard",
-    icon: LayoutDashboard,
-  },
-  {
-    title: "Q&A",
-    url: "/qa",
-    icon: Bot,
-  },
-  {
-    title: "Meetings",
-    url: "/meetings",
-    icon: Presentation,
-  },
-  {
-    title: "Billing",
-    url: "/billing",
-    icon: CreditCard,
-  },
-];
+// ─── Nav links ──────────────────────────────────────────────────────────────
+const NAV_ITEMS = [
+  { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+  { label: 'Q&A', href: '/qa', icon: Bot },
+] as const;
 
+// ─── Component ──────────────────────────────────────────────────────────────
 export function AppSidebar() {
   const pathname = usePathname();
-  const { open, setOpen, toggleSidebar } = useSidebar();
-  const { projects, projectId, setProjectId } = useProject();
-  const [isMounted, setIsMounted] = useState(false);
   const router = useRouter();
+  const { projects, projectId, setProjectId } = useProject();
 
+  // Auto-select the only project if nothing is selected yet
   useEffect(() => {
-    setIsMounted(true);
-    // If there's only one project, select it automatically
     if (projects?.length === 1 && !projectId && projects[0]) {
       setProjectId(projects[0].id);
     }
   }, [projects, projectId, setProjectId]);
 
-  // Handle project selection
-  const handleProjectClick = (id: string) => {
+  const handleProjectSelect = (id: string) => {
     setProjectId(id);
-    if (pathname.startsWith('/meetings')) {
-      router.push(`/meetings/${id}`);
-    }
   };
 
   return (
-    <Sidebar 
-      collapsible="icon" 
-      variant="sidebar" 
-      className="!border-0 mt-4 ml-6 mr-4"
-    >
-      <div className={cn(
-        "h-[calc(100vh-2rem)] glass-card !rounded-2xl !border-0 overflow-hidden transition-all duration-300 ease-in-out",
-        open ? "w-64" : "w-20"
-      )}>
-        {/* Enhanced Ambient Sidebar Background */}
-        <div className="absolute inset-0 bg-gradient-to-b from-slate-800/90 via-slate-700/80 to-slate-600/70" />
-        <div className="absolute top-0 inset-x-0 h-32 bg-gradient-to-b from-blue-500/10 via-purple-500/8 to-transparent" />
-        <div className="absolute bottom-0 inset-x-0 h-24 bg-gradient-to-t from-pink-500/8 via-transparent to-transparent" />
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 via-transparent to-purple-500/5" />
-        
-        {/* Content Wrapper with Top Padding */}
-        <div className="relative z-10 pt-8">
-              {/* Header */}
-              <SidebarHeader className={cn(
-                "transition-all duration-300 ease-in-out",
-                open ? "p-6 pt-0" : "p-4 pt-0"
-              )}>
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-                     <div className="relative flex-shrink-0">
-                       <div className={cn(
-                         "neo-card !rounded-xl flex items-center justify-center overflow-hidden transition-all duration-300 bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 shadow-lg shadow-blue-500/25",
-                         open ? "w-10 h-10" : "w-8 h-8"
-                       )}>
-                         <span className={cn(
-                           "relative z-10 text-white font-bold transition-all duration-300 drop-shadow-lg",
-                           open ? "text-xl" : "text-sm"
-                         )}>
-                           G
-                         </span>
-                       </div>
-                {/* Enhanced floating particles around logo - only show when expanded */}
-                {open && (
-                  <>
-                    <div className="absolute -top-1 -right-1 w-2 h-2 bg-gradient-to-br from-blue-400 to-cyan-400 rounded-full floating shadow-lg shadow-blue-400/50" />
-                    <div className="absolute -bottom-1 -left-1 w-1.5 h-1.5 bg-gradient-to-br from-pink-400 to-purple-400 rounded-full floating-delayed shadow-lg shadow-pink-400/50" />
-                    <div className="absolute top-1 -right-2 w-1 h-1 bg-gradient-to-br from-green-400 to-emerald-400 rounded-full floating-slow shadow-lg shadow-green-400/50" />
-                  </>
-                )}
-              </div>
-              
-              {/* Text only shows when expanded */}
-              {open && (
-                <div className="space-y-1 transition-all duration-300">
-                  <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent whitespace-nowrap drop-shadow-sm">
-                    GitAid
-                  </h2>
-                </div>
-              )}
-            </div>
+    <aside className="flex flex-col w-64 shrink-0 h-screen sticky top-0 bg-zinc-950/40 backdrop-blur-xl border-r border-white/5 overflow-y-auto z-40">
+
+      {/* ── Brand ─────────────────────────────────────────────────────── */}
+      <div className="px-5 py-6 mb-2">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center flex-shrink-0 shadow-lg shadow-emerald-900/20">
+            <GitBranch className="w-5 h-5 text-white" />
           </div>
-        </SidebarHeader>
-
-        {/* Content */}
-        <SidebarContent className="relative z-10">
-          <SidebarGroup>
-            {/* Group label only shows when expanded */}
-            {open && (
-              <SidebarGroupLabel className="text-xs uppercase tracking-wider text-blue-300/80 font-semibold px-6 mb-2 transition-all duration-300 bg-gradient-to-r from-blue-500/10 to-purple-500/10 py-2 rounded-lg border border-blue-400/20">
-                Application
-              </SidebarGroupLabel>
-            )}
-
-            <SidebarGroupContent className={cn(
-              "transition-all duration-300",
-              open ? "px-3" : "px-2"
-            )}>
-              <SidebarMenu className="space-y-2">
-                {items.map(item => {
-                  const isActive = pathname === item.url;
-                  return(
-                    <SidebarMenuItem key={item.title}>
-                      <SidebarMenuButton asChild>
-                        <Link 
-                          href={item.url} 
-                          className={cn(
-                            "relative group rounded-xl transition-all duration-300 overflow-hidden flex items-center",
-                            open ? "px-3 py-2 justify-start" : "px-2 py-2 justify-center",
-                            isActive 
-                              ? "neo-card !bg-gradient-to-r !from-blue-500 !to-purple-500 text-white shadow-lg shadow-blue-500/25" 
-                              : "hover:bg-gradient-to-r hover:from-blue-500/20 hover:to-purple-500/20 hover:border-blue-400/30"
-                          )}
-                        >
-                          {/* Enhanced Active indicator */}
-                          {isActive && open && (
-                            <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-blue-400 via-purple-400 to-pink-400 rounded-r-full shadow-lg shadow-blue-400/50" />
-                          )}
-                          
-                          {/* Enhanced Icon with better colors */}
-                          <div className={cn(
-                            "relative transition-all duration-300 flex-shrink-0",
-                            isActive 
-                              ? "text-white transform scale-110" 
-                              : "text-slate-300 hover:text-white",
-                            open ? "" : "mx-auto"
-                          )}>
-                            <item.icon className={cn(
-                              "w-5 h-5 transition-all duration-300",
-                              isActive ? "drop-shadow-lg" : "hover:drop-shadow-md"
-                            )} />
-                            {isActive && (
-                              <div className="absolute inset-0 bg-gradient-to-r from-blue-400/30 to-purple-400/30 rounded blur-sm scale-150" />
-                            )}
-                          </div>
-                          
-                          {/* Text only shows when expanded */}
-                          {open && (
-                            <span className={cn(
-                              "font-medium transition-all duration-300 ml-3 whitespace-nowrap",
-                              isActive 
-                                ? "text-white font-semibold drop-shadow-lg" 
-                                : "text-slate-300 group-hover:text-white"
-                            )}>
-                              {item.title}
-                            </span>
-                          )}
-                          
-                        </Link>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  )
-                })}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-
-          {/* Projects Section */}
-          <SidebarGroup className="mt-6">
-            {/* Group label only shows when expanded */}
-            {open && (
-              <SidebarGroupLabel className="text-xs uppercase tracking-wider text-purple-300/80 font-semibold px-6 mb-2 transition-all duration-300 bg-gradient-to-r from-purple-500/10 to-pink-500/10 py-2 rounded-lg border border-purple-400/20">
-                Your Projects
-              </SidebarGroupLabel>
-            )}
-            
-            <SidebarGroupContent className={cn(
-              "transition-all duration-300",
-              open ? "px-3" : "px-2"
-            )}>
-              <SidebarMenu className="space-y-2">
-                {projects === undefined ? (
-                  // Enhanced Loading state
-                  <div className={cn(
-                    "flex flex-col items-center space-y-3",
-                    open ? "py-6" : "py-3"
-                  )}>
-                    <div className="relative">
-                      <div className="w-6 h-6 rounded-full border-2 border-primary/20 border-t-primary animate-spin" />
-                    </div>
-                    {open && (
-                      <div className="shimmer-loading h-3 w-24 rounded bg-muted/30" />
-                    )}
-                  </div>
-                ) : projects.length === 0 ? (
-                  // Enhanced Empty state
-                  <div className={cn(
-                    "flex flex-col items-center text-center space-y-4",
-                    open ? "py-6" : "py-3"
-                  )}>
-                    <div className="relative">
-                      <div className={cn(
-                        "neo-card rounded-2xl flex items-center justify-center transition-all duration-300",
-                        open ? "w-12 h-12" : "w-8 h-8"
-                      )}>
-                        <Plus className={cn(
-                          "text-primary transition-all duration-300",
-                          open ? "w-6 h-6" : "w-4 h-4"
-                        )} />
-                      </div>
-                      {open && (
-                        <div className="absolute -top-1 -right-1 w-3 h-3 bg-accent/40 rounded-full floating" />
-                      )}
-                    </div>
-                    {open && (
-                      <div className="space-y-2">
-                        <p className="text-xs text-muted-foreground font-medium">No projects yet</p>
-                        <Link href="/create">
-                          <Button className="magnetic-button text-xs h-8 px-3 bg-gradient-to-r from-primary to-secondary border-0">
-                            <Plus className="w-3 h-3 mr-1"/>
-                            Create your first project
-                          </Button>
-                        </Link>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  // Enhanced Projects list
-                  projects.map((project: any) => {
-                    const isSelected = isMounted && project.id === projectId;
-                    return (
-                      <SidebarMenuItem key={project.id}>
-                        <SidebarMenuButton 
-                          className={cn(
-                            "relative group rounded-xl transition-all duration-300 overflow-hidden cursor-pointer flex items-center",
-                            open ? "px-3 py-2 justify-start" : "px-2 py-2 justify-center",
-                            isSelected 
-                              ? "neo-card !bg-gradient-to-r !from-accent !to-primary text-white shadow-lg" 
-                              : ""
-                          )}
-                          onClick={() => setProjectId(project.id)}
-                        >
-                          {/* Selected indicator */}
-                          {isSelected && open && (
-                            <div className="absolute right-0 top-0 bottom-0 w-1 bg-gradient-to-b from-secondary via-accent to-primary rounded-l-full" />
-                          )}
-                          
-                          {/* Project Avatar */}
-                          <div className={cn(
-                            "relative transition-all duration-300 flex-shrink-0",
-                            isSelected 
-                              ? "transform scale-110" 
-                              : "",
-                            open ? "" : "mx-auto"
-                          )}>
-                            <div className={cn(
-                              "rounded-xl flex items-center justify-center text-sm font-bold transition-all duration-300",
-                              open ? "w-8 h-8" : "w-6 h-6",
-                              isSelected
-                                ? "bg-white/20 text-white shadow-lg"
-                                : "bg-gradient-to-br from-primary to-secondary text-white"
-                            )}>
-                              {project.name.charAt(0).toUpperCase()}
-                            </div>
-                            {isSelected && (
-                              <div className="absolute inset-0 bg-white/20 rounded-xl blur-sm scale-150" />
-                            )}
-                          </div>
-                          
-                          {/* Project Name - only shows when expanded */}
-                          {open && (
-                            <span className={cn(
-                              "text-sm font-medium transition-all duration-300 flex-1 truncate ml-3 whitespace-nowrap",
-                              isSelected 
-                                ? "text-white font-semibold" 
-                                : ""
-                            )}>
-                              {project.name}
-                            </span>
-                          )}
-                          
-                          {/* Active project pulse - only shows when expanded */}
-                          {isSelected && open && (
-                            <div className="w-2 h-2 bg-emerald-400 rounded-full pulse-glow-secondary" />
-                          )}
-                          
-                        </SidebarMenuButton>
-                      </SidebarMenuItem>
-                    )
-                  })
-                )}
-                
-                {/* Create Project Button - only shows when expanded */}
-                {open && (
-                  <>
-                    <div className="h-4" />
-                    <SidebarMenuItem>
-                      <Link href="/create" className="block">
-                        <Button className="w-full magnetic-button justify-start text-sm h-10 bg-gradient-to-r from-muted to-muted/80 border border-border/40 text-muted-foreground transition-all duration-300">
-                          <Plus className="w-4 h-4 mr-2"/>
-                          Create Project
-                        </Button>
-                      </Link>
-                    </SidebarMenuItem>
-                  </>
-                )}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-
-        </SidebarContent>
+          <span className="text-lg font-bold text-white tracking-tight text-glow">
+            GitAid
+          </span>
         </div>
       </div>
-    </Sidebar>
+
+      {/* ── Nav ───────────────────────────────────────────────────────── */}
+      <nav className="flex-1 px-3 space-y-1">
+        {/* Main links */}
+        <p className="px-4 mb-2 text-[10px] font-bold text-zinc-500 uppercase tracking-[0.2em]">
+          Navigation
+        </p>
+        {(() => {
+          const utils = api.useUtils();
+          return NAV_ITEMS.map(({ label, href, icon: Icon }) => {
+            const active = pathname === href || pathname.startsWith(href + '/');
+            return (
+              <Link
+                key={href}
+                href={href}
+                onMouseEnter={() => {
+                  if (href === '/qa' && projectId) {
+                    utils.project.getQuestions.prefetch({ projectId });
+                  }
+                }}
+                className={cn(
+                  'group relative flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200',
+                  active
+                    ? 'bg-white/10 text-white'
+                    : 'text-zinc-400 hover:text-white hover:bg-white/5'
+                )}
+              >
+                {active && <div className="sidebar-active-pill" />}
+                <Icon className={cn('w-4 h-4 shrink-0 transition-colors duration-200', active ? 'text-emerald-400' : 'text-zinc-500 group-hover:text-zinc-300')} />
+                {label}
+              </Link>
+            );
+          });
+        })()}
+
+        {/* Projects */}
+        <div className="pt-8">
+          <div className="flex items-center justify-between px-4 mb-3">
+            <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-[0.2em]">
+              Projects
+            </p>
+            <Link
+              href="/create"
+              className="w-5 h-5 flex items-center justify-center rounded-md bg-zinc-900 hover:bg-zinc-800 text-zinc-500 hover:text-zinc-200 transition-all border border-white/5"
+              title="New project"
+            >
+              <Plus className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+
+          {/* Loading */}
+          {projects === undefined && (
+            <div className="space-y-2 px-3">
+              {[1, 2].map((i) => (
+                <div key={i} className="h-10 rounded-xl bg-white/5 animate-pulse" />
+              ))}
+            </div>
+          )}
+
+          {/* Empty */}
+          {projects?.length === 0 && (
+            <div className="px-4 py-6 text-center premium-glass rounded-2xl mx-2 border-dashed border-zinc-800">
+              <p className="text-xs text-zinc-500 mb-3">No projects yet</p>
+              <Link
+                href="/create"
+                className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-400 hover:text-emerald-300 transition-colors"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                Create one
+              </Link>
+            </div>
+          )}
+
+          {/* Project list */}
+          {projects && projects.length > 0 && (
+            <ul className="space-y-1">
+              {projects.map((project: any) => {
+                const selected = project.id === projectId;
+                return (
+                  <li key={project.id} className="px-2">
+                    <button
+                      onClick={() => handleProjectSelect(project.id)}
+                      className={cn(
+                        'w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all duration-200 text-left group relative',
+                        selected
+                          ? 'bg-white/10 text-white border border-white/5'
+                          : 'text-zinc-400 hover:text-white hover:bg-white/5'
+                      )}
+                    >
+                      {selected && <div className="absolute left-[-8px] w-1 h-5 bg-emerald-500 rounded-full shadow-[0_0_8px_hsla(140,100%,50%,0.5)]" />}
+                      <span
+                        className={cn(
+                          'w-7 h-7 rounded-lg flex items-center justify-center text-xs font-black shrink-0 transition-transform duration-200 group-hover:scale-105',
+                          selected
+                            ? 'bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-lg shadow-emerald-950/20'
+                            : 'bg-zinc-900 text-zinc-400 border border-white/5'
+                        )}
+                      >
+                        {project.name.charAt(0).toUpperCase()}
+                      </span>
+                      <span className="truncate font-semibold tracking-tight">
+                        {project.name}
+                      </span>
+                      {selected && (
+                        <span className="ml-auto w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_hsla(140,100%,50%,0.8)]" />
+                      )}
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
+      </nav>
+
+      {/* ── Footer: user ──────────────────────────────────────────────── */}
+      <div className="px-4 py-6 mt-auto border-t border-white/5 bg-zinc-950/20">
+        <div className="flex items-center gap-3 p-2 rounded-2xl hover:bg-white/5 transition-colors cursor-pointer group">
+          <UserButton
+            afterSignOutUrl="/"
+            appearance={{
+              elements: {
+                avatarBox: 'w-9 h-9 rounded-xl border border-white/10 shadow-lg',
+              },
+            }}
+          />
+          <div className="min-w-0">
+            <p className="text-xs font-bold text-zinc-200 truncate group-hover:text-white transition-colors">Account</p>
+            <p className="text-[10px] text-zinc-500 truncate font-medium">Manage profile</p>
+          </div>
+        </div>
+      </div>
+
+    </aside>
+
   );
 }
 

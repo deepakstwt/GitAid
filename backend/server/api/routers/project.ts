@@ -7,7 +7,7 @@ export const projectRouter = createTRPCRouter({
     .query(() => {
       return { message: "tRPC is working!" };
     }),
-    
+
   createProject: protectedProcedure
     .input(
       z.object({
@@ -20,7 +20,7 @@ export const projectRouter = createTRPCRouter({
       const { clerkClient } = await import("@clerk/nextjs/server");
       const client = await clerkClient();
       const clerkUser = await client.users.getUser(ctx.userId);
-      
+
       const userEmail = clerkUser.emailAddresses[0]?.emailAddress;
       if (!userEmail) {
         throw new Error("User email not found");
@@ -86,7 +86,7 @@ export const projectRouter = createTRPCRouter({
       throw new Error(`Failed to fetch projects: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }),
-    
+
   updateProject: protectedProcedure
     .input(
       z.object({
@@ -121,7 +121,7 @@ export const projectRouter = createTRPCRouter({
       });
 
       return updatedProject;
-  }),
+    }),
 
   fetchCommitsFromGithub: protectedProcedure
     .input(
@@ -153,7 +153,7 @@ export const projectRouter = createTRPCRouter({
 
       const { getCommitHashes } = await import("@/server/lib/github");
       const { env } = await import("@/server/config/env");
-      
+
       try {
         const commits = await getCommitHashes(project.githubUrl, env.GITHUB_TOKEN);
         return commits.map(commit => ({
@@ -174,45 +174,6 @@ export const projectRouter = createTRPCRouter({
         console.error("Failed to fetch commits from GitHub:", error);
         const message = error instanceof Error ? error.message : 'Unknown error';
         throw new Error(`Failed to fetch commits: ${message}`);
-      }
-    }),
-
-  syncCommits: protectedProcedure
-    .input(
-      z.object({
-        projectId: z.string(),
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      const project = await ctx.db.project.findFirst({
-        where: {
-          id: input.projectId,
-          UserToProjects: {
-            some: {
-              userId: ctx.userId,
-            },
-          },
-          deletedAt: null,
-        },
-      });
-
-      if (!project) {
-        throw new Error("Project not found or access denied");
-      }
-
-      if (!project.githubUrl) {
-        throw new Error("Project does not have a GitHub URL");
-      }
-
-      const { syncProjectCommits } = await import("@/server/lib/database");
-      const { env } = await import("@/server/config/env");
-      
-      try {
-        const commits = await syncProjectCommits(project.id, project.githubUrl, env.GITHUB_TOKEN);
-        return { success: true, count: commits.length };
-      } catch (error) {
-        console.error("Failed to sync commits:", error);
-        throw new Error("Failed to sync commits from GitHub");
       }
     }),
 
@@ -247,7 +208,7 @@ export const projectRouter = createTRPCRouter({
         take: COMMITS_LIMIT,
       });
     }),
-    
+
   pollCommits: protectedProcedure
     .input(
       z.object({
@@ -272,7 +233,7 @@ export const projectRouter = createTRPCRouter({
       }
 
       const { pollCommits } = await import("@/server/lib/github");
-      
+
       try {
         const result = await pollCommits(project.id);
         return result;
@@ -303,7 +264,7 @@ export const projectRouter = createTRPCRouter({
       }
 
       const { pollCommitsForProjects } = await import("@/server/lib/github");
-      
+
       try {
         const projectIds = projects.map(p => p.id);
         const result = await pollCommitsForProjects(projectIds);
@@ -346,17 +307,17 @@ export const projectRouter = createTRPCRouter({
 
       const { loadGitHubRepositoryByExtensions, getRepositoryStats } = await import("@/server/lib/github-loader");
       const { env } = await import("@/server/config/env");
-      
+
       try {
         const extensions = input.extensions || ['.ts', '.tsx', '.js', '.jsx', '.py', '.md', '.json'];
         const documents = await loadGitHubRepositoryByExtensions(
-          project.githubUrl, 
+          project.githubUrl,
           env.GITHUB_TOKEN,
           extensions
         );
-        
+
         const stats = getRepositoryStats(documents);
-        
+
         return {
           files: documents.map(doc => ({
             path: doc.metadata?.source || '',
@@ -373,7 +334,7 @@ export const projectRouter = createTRPCRouter({
         throw new Error(`Failed to load repository files: ${message}`);
       }
     }),
-    
+
   getQuestions: protectedProcedure
     .input(
       z.object({
@@ -629,7 +590,6 @@ export const projectRouter = createTRPCRouter({
           commits: z.boolean(),
           comments: z.boolean(),
           team: z.boolean(),
-          meetings: z.boolean(),
           analytics: z.boolean(),
         }),
       })
@@ -687,4 +647,4 @@ export const projectRouter = createTRPCRouter({
       };
     }),
 
-  });
+});

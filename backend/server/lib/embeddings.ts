@@ -6,11 +6,11 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
  */
 export async function getGeminiClient(): Promise<GoogleGenerativeAI> {
   const { env } = await import('@/server/config/env');
-  
+
   if (!env.GEMINI_API_KEY) {
     throw new Error('GEMINI_API_KEY environment variable is not set');
   }
-  
+
   return new GoogleGenerativeAI(env.GEMINI_API_KEY);
 }
 
@@ -19,8 +19,8 @@ const MAX_SUMMARY_LENGTH = 500;
 export async function summarizeDocument(content: string, fileName?: string): Promise<string> {
   try {
     const genAI = await getGeminiClient();
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
-    
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
     const prompt = `
 You are an expert code analyst. Provide a concise, technical summary of this file that will be useful for a RAG (Retrieval Augmented Generation) system.
 
@@ -38,20 +38,20 @@ Keep the summary under 200 words and make it searchable for relevant queries.
 File content:
 ${content}
 `;
-    
+
     const result = await model.generateContent(prompt);
     const response = await result.response;
     const summary = response.text();
-    
+
     const cleanSummary = summary.trim();
     if (cleanSummary.length > MAX_SUMMARY_LENGTH) {
       return cleanSummary.substring(0, MAX_SUMMARY_LENGTH - 3) + '...';
     }
-    
+
     return cleanSummary;
   } catch (error) {
     console.error('Error generating document summary:', error);
-    
+
     // Fallback to basic analysis
     return generateDocumentFallbackSummary(content, fileName);
   }
@@ -61,14 +61,14 @@ export async function getEmbeddings(text: string): Promise<number[]> {
   try {
     const genAI = await getGeminiClient();
     const model = genAI.getGenerativeModel({ model: "text-embedding-004" });
-    
+
     const result = await model.embedContent(text);
     const embedding = result.embedding;
-    
+
     if (!embedding.values || embedding.values.length === 0) {
       throw new Error('No embedding values returned from Gemini');
     }
-    
+
     return embedding.values;
   } catch (error) {
     console.error('Error generating embeddings:', error);
@@ -80,11 +80,11 @@ export function cosineSimilarity(a: number[], b: number[]): number {
   if (a.length !== b.length) {
     throw new Error('Vectors must have the same length');
   }
-  
+
   let dotProduct = 0;
   let normA = 0;
   let normB = 0;
-  
+
   for (let i = 0; i < a.length; i++) {
     const aVal = a[i] ?? 0;
     const bVal = b[i] ?? 0;
@@ -92,24 +92,24 @@ export function cosineSimilarity(a: number[], b: number[]): number {
     normA += aVal * aVal;
     normB += bVal * bVal;
   }
-  
+
   normA = Math.sqrt(normA);
   normB = Math.sqrt(normB);
-  
+
   if (normA === 0 || normB === 0) {
     return 0;
   }
-  
+
   return dotProduct / (normA * normB);
 }
 
 export async function generateRAGAnswer(question: string, context: string[]): Promise<string> {
   try {
     const genAI = await getGeminiClient();
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
-    
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
     const contextText = context.join('\n\n---\n\n');
-    
+
     const prompt = `
 You are a helpful AI assistant answering questions about a codebase. Use the provided context from relevant files to answer the user's question accurately and helpfully.
 
@@ -127,10 +127,10 @@ Instructions:
 
 Answer:
 `;
-    
+
     const result = await model.generateContent(prompt);
     const response = await result.response;
-    
+
     return response.text().trim();
   } catch (error) {
     console.error('Error generating RAG answer:', error);
@@ -144,11 +144,11 @@ function generateDocumentFallbackSummary(content: string, fileName?: string): st
   const lines = content.split('\n');
   const totalLines = lines.length;
   const extension = fileName?.split('.').pop()?.toLowerCase() || 'unknown';
-  
+
   let summary = `${fileName || 'File'} (${extension.toUpperCase()}) - ${totalLines} lines. `;
-  
+
   const lowerContent = content.toLowerCase();
-  
+
   if (extension === 'ts' || extension === 'tsx' || extension === 'js' || extension === 'jsx') {
     if (lowerContent.includes('function') || lowerContent.includes('=>')) {
       summary += 'Contains function definitions. ';
@@ -169,14 +169,14 @@ function generateDocumentFallbackSummary(content: string, fileName?: string): st
   } else if (extension === 'css') {
     summary += 'Styling definitions. ';
   }
-  
+
   return summary + '(Basic analysis - AI unavailable)';
 }
 
 function generateFallbackEmbedding(text: string): number[] {
   const dimension = FALLBACK_EMBEDDING_DIMENSION;
   const embedding = new Array(dimension).fill(0);
-  
+
   for (let i = 0; i < text.length; i++) {
     const char = text.charCodeAt(i);
     const index = char % dimension;
@@ -188,7 +188,7 @@ function generateFallbackEmbedding(text: string): number[] {
       embedding[i] /= norm;
     }
   }
-  
+
   return embedding;
 }
 

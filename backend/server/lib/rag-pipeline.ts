@@ -28,10 +28,10 @@ export async function processRepositoryForRAG(
     const relevantDocs = documents.filter(doc => {
       const source = doc.metadata?.source || '';
       const content = doc.pageContent || '';
-      
+
       if (content.trim().length === 0) return false;
       if (content.length > MAX_FILE_SIZE_BYTES) return false;
-      
+
       const extension = source.split('.').pop()?.toLowerCase();
       return extension ? TEXT_EXTENSIONS.includes(extension) : true;
     });
@@ -58,7 +58,7 @@ export async function processRepositoryForRAG(
 
         const summary = await summarizeDocument(content, fileName);
         const embedding = await getEmbeddings(summary);
-        
+
         await db.document.create({
           data: {
             projectId,
@@ -84,7 +84,7 @@ export async function processRepositoryForRAG(
 
     results.success = true;
     console.log(`🎉 RAG processing complete! Processed: ${results.processedCount}, Skipped: ${results.skippedCount}, Errors: ${results.errors.length}`);
-    
+
   } catch (error) {
     const errorMsg = `RAG processing failed: ${error instanceof Error ? error.message : 'Unknown error'}`;
     console.error(`❌ ${errorMsg}`);
@@ -140,7 +140,7 @@ export async function queryRAG(
       try {
         const docEmbedding = JSON.parse(doc.embedding || '[]') as number[];
         const similarity = cosineSimilarity(questionEmbedding, docEmbedding);
-        
+
         return {
           fileName: doc.fileName,
           summary: doc.summary,
@@ -158,19 +158,19 @@ export async function queryRAG(
 
     // Sort by similarity (highest first) and take top-k
     const topDocuments = similarities
-      .sort((a, b) => b.similarity - a.similarity)
+      .sort((a: { fileName: string; summary: string; similarity: number }, b: { fileName: string; summary: string; similarity: number }) => b.similarity - a.similarity)
       .slice(0, topK);
 
     console.log(`📋 Found ${topDocuments.length} relevant documents`);
-    topDocuments.forEach((doc, i) => {
+    topDocuments.forEach((doc: { fileName: string; summary: string; similarity: number }, i: number) => {
       console.log(`  ${i + 1}. ${doc.fileName} (similarity: ${doc.similarity.toFixed(3)})`);
     });
 
     // Step 4: Generate answer using retrieved context
-    const contextSummaries = topDocuments.map(doc => 
+    const contextSummaries = topDocuments.map((doc: { fileName: string; summary: string; similarity: number }) =>
       `File: ${doc.fileName}\nSummary: ${doc.summary}`
     );
-    
+
     const answer = await generateRAGAnswer(question, contextSummaries);
 
     return {
@@ -182,7 +182,7 @@ export async function queryRAG(
   } catch (error) {
     const errorMsg = `RAG query failed: ${error instanceof Error ? error.message : 'Unknown error'}`;
     console.error(`❌ ${errorMsg}`);
-    
+
     return {
       answer: 'I apologize, but I encountered an error while processing your question. Please try again.',
       context: [],
@@ -215,22 +215,22 @@ export async function getRAGStats(projectId: string): Promise<{
 
   const stats = {
     totalDocuments: documents.length,
-    totalSummaries: documents.filter(d => d.summary).length,
-    totalEmbeddings: documents.filter(d => d.embedding).length,
+    totalSummaries: documents.filter((d: { fileName: string; summary: string; embedding: string | null }) => d.summary).length,
+    totalEmbeddings: documents.filter((d: { fileName: string; summary: string; embedding: string | null }) => d.embedding).length,
     fileTypes: {} as Record<string, number>,
     avgSummaryLength: 0
   };
 
   // Calculate file type distribution
-  documents.forEach(doc => {
+  documents.forEach((doc: { fileName: string; summary: string; embedding: string | null }) => {
     const extension = doc.fileName.split('.').pop()?.toLowerCase() || 'unknown';
     stats.fileTypes[extension] = (stats.fileTypes[extension] || 0) + 1;
   });
 
   // Calculate average summary length
-  const summaries = documents.filter(d => d.summary).map(d => d.summary);
+  const summaries = documents.filter((d: { fileName: string; summary: string; embedding: string | null }) => d.summary).map((d: { fileName: string; summary: string; embedding: string | null }) => d.summary);
   if (summaries.length > 0) {
-    const totalLength = summaries.reduce((sum, summary) => sum + summary.length, 0);
+    const totalLength = summaries.reduce((sum: number, summary: string) => sum + summary.length, 0);
     stats.avgSummaryLength = Math.round(totalLength / summaries.length);
   }
 
@@ -246,7 +246,7 @@ export async function clearRAGData(projectId: string): Promise<number> {
   const result = await db.document.deleteMany({
     where: { projectId }
   });
-  
+
   console.log(`🗑️  Cleared ${result.count} documents for project ${projectId}`);
   return result.count;
 }

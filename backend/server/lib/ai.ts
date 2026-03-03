@@ -19,8 +19,8 @@ export async function getGeminiClient(): Promise<GoogleGenerativeAI> {
 export async function summarizeText(text: string): Promise<string> {
   try {
     const genAI = await getGeminiClient();
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
-    
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
     const prompt = `Analyze this Git commit and provide a concise, helpful summary. Focus on:
 1. What type of change this is (feature, bugfix, refactor, etc.)
 2. The main purpose and impact of the changes
@@ -30,15 +30,15 @@ Keep the summary under 150 words and use a professional, informative tone.
 
 Commit data:
 ${text}`;
-    
+
     const result = await model.generateContent(prompt);
     const response = await result.response;
     const summary = response.text().trim();
-    
+
     if (summary.length > 500) {
       return summary.substring(0, 497) + '...';
     }
-    
+
     return summary;
   } catch (error) {
     console.error('Error generating AI summary:', error);
@@ -49,7 +49,7 @@ ${text}`;
 function generateFallbackSummary(text: string): string {
   const lowerText = text.toLowerCase();
   let summary = "Code changes detected. ";
-  
+
   if (lowerText.includes('fix') || lowerText.includes('bug') || lowerText.includes('error')) {
     summary += "Bug fix or error correction.";
   } else if (lowerText.includes('feat') || lowerText.includes('add') || lowerText.includes('new')) {
@@ -69,16 +69,6 @@ function generateFallbackSummary(text: string): string {
   } else {
     summary += "General improvements and updates.";
   }
-  
-  return summary + " (Fallback: AI unavailable)";
-}
 
-export async function testGeminiConnection(): Promise<boolean> {
-  try {
-    await summarizeText("test: add unit tests for user authentication");
-    return true;
-  } catch (error) {
-    console.error('Gemini AI test failed:', error);
-    return false;
-  }
+  return summary + " (Fallback: AI unavailable)";
 }
