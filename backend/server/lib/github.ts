@@ -97,9 +97,9 @@ export async function getCommitHashes(githubUrl: string, githubToken: string): P
 /**
  * Helper function to fetch project and its GitHub URL from database
  * @param projectId - The project ID to fetch
- * @returns Object with project and githubUrl
+ * @returns Object with project, githubUrl, and githubToken
  */
-export async function fetchProjectGithubUrl(projectId: string): Promise<{ project: any; githubUrl: string }> {
+export async function fetchProjectGithubUrl(projectId: string): Promise<{ project: any; githubUrl: string; githubToken: string | null }> {
   const { db } = await import('@/server/db');
 
   try {
@@ -109,6 +109,7 @@ export async function fetchProjectGithubUrl(projectId: string): Promise<{ projec
         id: true,
         name: true,
         githubUrl: true,
+        githubToken: true,
         createdAt: true,
         updatedAt: true,
       },
@@ -122,7 +123,7 @@ export async function fetchProjectGithubUrl(projectId: string): Promise<{ projec
       throw new Error(`Project ${project.name} does not have a GitHub URL configured`);
     }
 
-    return { project, githubUrl: project.githubUrl };
+    return { project, githubUrl: project.githubUrl, githubToken: project.githubToken };
   } catch (error) {
     console.error('Error fetching project GitHub URL:', error);
     throw error;
@@ -254,6 +255,44 @@ ${commitInfo.files.slice(0, 3).map(file =>
 }
 
 /**
+ * Get public repo stats (stars, forks, language) for the Open Source dashboard
+ */
+export async function getRepoStats(
+  githubUrl: string,
+  githubToken: string
+): Promise<{ fullName: string; stars: number; forks: number; language: string | null; description: string | null }> {
+  const parsed = parseGitHubUrl(githubUrl);
+  if (!parsed) {
+    throw new Error(`Invalid GitHub URL: ${githubUrl}`);
+  }
+  const { owner, repo } = parsed;
+  try {
+    const octokit = new Octokit(githubToken ? { auth: githubToken } : {});
+    const { data } = await octokit.rest.repos.get({ owner, repo });
+    return {
+      fullName: data.full_name ?? `${owner}/${repo}`,
+      stars: data.stargazers_count ?? 0,
+      forks: data.forks_count ?? 0,
+      language: data.language ?? null,
+      description: data.description ?? null,
+    };
+  } catch (error: any) {
+    if (error.status === 401 || error.message?.includes('Bad credentials')) {
+      const fallback = new Octokit();
+      const { data } = await fallback.rest.repos.get({ owner, repo });
+      return {
+        fullName: data.full_name ?? `${owner}/${repo}`,
+        stars: data.stargazers_count ?? 0,
+        forks: data.forks_count ?? 0,
+        language: data.language ?? null,
+        description: data.description ?? null,
+      };
+    }
+    throw error;
+  }
+}
+
+/**
  * Get raw commit diff from GitHub API using Axios
  * @param githubUrl - GitHub repository URL  
  * @param commitHash - The commit hash to fetch diff for
@@ -322,31 +361,47 @@ export async function getCommitDiff(githubUrl: string, commitHash: string, githu
  * @returns Promise<string> - AI-generated summary
  */
 export async function summarizeCommit(githubUrl: string, commitHash: string, commitMessage: string, githubToken: string): Promise<{ summary: string; additions: number; deletions: number; filesChanged: number }> {
+  let additions = 0;
+  let deletions = 0;
+  let filesChanged = 0;
+  let textForSummary = `COMMIT: ${commitHash.substring(0, 7)}\nMESSAGE: ${commitMessage}\n`;
+
   try {
     console.log(`Generating AI summary for commit ${commitHash.substring(0, 7)}`);
 
-    // Import AI utilities
     const { summarizeText } = await import('@/server/lib/ai');
 
-    const { diffText, additions, deletions, filesChanged } = await fetchCommitDiff(githubUrl, commitHash, githubToken);
+    try {
+      const diffResult = await fetchCommitDiff(githubUrl, commitHash, githubToken);
+      additions = diffResult.additions;
+      deletions = diffResult.deletions;
+      filesChanged = diffResult.filesChanged;
+      // Use full diff for AI when available; otherwise we already have message in textForSummary
+      if (diffResult.diffText && diffResult.diffText.trim().length > 50) {
+        textForSummary = diffResult.diffText;
+      } else {
+        textForSummary += `\n(No diff or minimal diff - e.g. merge or empty commit.)`;
+      }
+    } catch (diffError: any) {
+      console.warn(`Could not fetch diff for ${commitHash.substring(0, 7)}, using message-only summary:`, diffError?.message || diffError);
+      // textForSummary already has commit + message; AI can still summarize
+    }
 
-    const aiSummary = await summarizeText(diffText);
+    const aiSummary = await summarizeText(textForSummary);
     return {
       summary: aiSummary,
       additions,
       deletions,
       filesChanged
     };
+  } catch (error: any) {
+    console.error(`Failed to generate AI summary for commit ${commitHash}:`, error?.message || error);
 
-  } catch (error) {
-    console.error(`Failed to generate AI summary for commit ${commitHash}:`, error);
-
-    // Fallback to pattern-based summary
     return {
       summary: generateBasicCommitSummary(commitMessage),
-      additions: 0,
-      deletions: 0,
-      filesChanged: 0
+      additions,
+      deletions,
+      filesChanged
     };
   }
 }
@@ -413,9 +468,10 @@ export async function generateCommitSummary(commit: CommitData, projectId: strin
 /**
  * Poll commits for a specific project and process new ones
  * @param projectId - The project ID to poll commits for
+ * @param githubTokenOverride - Optional token to use instead of the one in DB/Env
  * @returns Promise<{ processed: number; total: number; commits: any[] }>
  */
-export async function pollCommits(projectId: string): Promise<{ processed: number; total: number; commits: any[] }> {
+export async function pollCommits(projectId: string, githubTokenOverride?: string): Promise<{ processed: number; total: number; commits: any[] }> {
   const { env } = await import('@/server/config/env');
   const { db } = await import('@/server/db');
 
@@ -423,8 +479,12 @@ export async function pollCommits(projectId: string): Promise<{ processed: numbe
     console.log(`Polling commits for project: ${projectId}`);
 
     // Step 1: Fetch project and GitHub URL from DB
-    const { project, githubUrl } = await fetchProjectGithubUrl(projectId);
-    const allCommits = await getCommitHashes(githubUrl, env.GITHUB_TOKEN);
+    const { project, githubUrl, githubToken: dbToken } = await fetchProjectGithubUrl(projectId);
+    
+    // Choose the best token: Override > DB > Env
+    const activeToken = githubTokenOverride || dbToken || env.GITHUB_TOKEN;
+    
+    const allCommits = await getCommitHashes(githubUrl, activeToken);
     const latestCommits = allCommits.slice(0, 10);
 
     // Step 3: Filter out already-processed commits
@@ -437,57 +497,35 @@ export async function pollCommits(projectId: string): Promise<{ processed: numbe
 
     console.log(`Processing ${newCommits.length} new commits with AI summarization`);
 
-    // Process commits concurrently with Promise.allSettled
-    const commitProcessingPromises = newCommits.map(async (commit) => {
+    const processedCommits = [];
+    for (const commit of newCommits) {
       try {
-        // Use the local summarizeCommit function which handles everything
-        const result = await summarizeCommit(githubUrl, commit.commitHash, commit.commitMessage, env.GITHUB_TOKEN);
-
-        return {
+        console.log(`Summarizing commit: ${commit.commitHash.substring(0, 7)}`);
+        const result = await summarizeCommit(githubUrl, commit.commitHash, commit.commitMessage, activeToken);
+        
+        processedCommits.push({
           ...commit,
           summary: result.summary,
           linesAdded: result.additions,
           linesDeleted: result.deletions,
           filesChanged: result.filesChanged,
           success: true
-        };
+        });
+
+        // Add a 4000ms delay between AI calls to strictly respect Gemini Free Tier 15 RPM limit
+        await new Promise(resolve => setTimeout(resolve, 4000));
       } catch (error) {
         console.error(`Failed to process commit ${commit.commitHash.substring(0, 7)}:`, error);
-        return {
+        processedCommits.push({
           ...commit,
-          summary: generateBasicCommitSummary(commit.commitMessage), // Use fallback summary
+          summary: generateBasicCommitSummary(commit.commitMessage),
           linesAdded: 0,
           linesDeleted: 0,
           filesChanged: 0,
           success: false
-        };
+        });
       }
-    });
-
-    // Use Promise.allSettled to process all diffs concurrently
-    const results = await Promise.allSettled(commitProcessingPromises);
-
-    // Collect summaries, defaulting to "" if a summary fails
-    const processedCommits = results.map((result, index) => {
-      const commit = newCommits[index];
-      if (!commit) {
-        throw new Error(`Commit at index ${index} is undefined`);
-      }
-
-      if (result.status === 'fulfilled') {
-        return result.value;
-      } else {
-        console.error(`Promise rejected for commit ${commit.commitHash.substring(0, 7)}:`, result.reason);
-        return {
-          ...commit,
-          summary: "",
-          linesAdded: 0,
-          linesDeleted: 0,
-          filesChanged: 0,
-          success: false
-        };
-      }
-    });
+    }
 
     // Step 5: Save results to DB with db.comment.createMany
     // Ensure type safety with non-null assertions where data is guaranteed

@@ -46,6 +46,7 @@ export const projectRouter = createTRPCRouter({
         data: {
           name: input.name,
           ...(input.githubUrl ? { githubUrl: input.githubUrl } : {}),
+          ...(input.githubToken ? { githubToken: input.githubToken } : {}),
           UserToProjects: {
             create: {
               userId: ctx.userId,
@@ -55,12 +56,14 @@ export const projectRouter = createTRPCRouter({
       });
 
       if (input.githubUrl) {
-        try {
-          const { pollCommits } = await import("@/server/lib/github");
-          await pollCommits(project.id);
-        } catch (pollError) {
-          console.warn('Failed to auto-poll commits:', pollError);
-        }
+        // Fire-and-forget: do NOT await pollCommits.
+        // pollCommits can take 40+ seconds (up to 10 commits × AI call + 4 s delay each).
+        // Return the project immediately and let polling finish in the background.
+        import("@/server/lib/github").then(({ pollCommits }) => {
+          pollCommits(project.id, input.githubToken).catch((pollError: unknown) => {
+            console.warn('Background commit poll failed for project', project.id, pollError);
+          });
+        }).catch(() => { /* ignore import error */ });
       }
 
       return project;
@@ -93,6 +96,7 @@ export const projectRouter = createTRPCRouter({
         id: z.string(),
         name: z.string().optional(),
         githubUrl: z.string().optional(),
+        githubToken: z.string().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -117,6 +121,7 @@ export const projectRouter = createTRPCRouter({
         data: {
           ...(input.name !== undefined ? { name: input.name } : {}),
           ...(input.githubUrl !== undefined ? { githubUrl: input.githubUrl } : {}),
+          ...(input.githubToken !== undefined ? { githubToken: input.githubToken } : {}),
         },
       });
 
@@ -275,6 +280,64 @@ export const projectRouter = createTRPCRouter({
         throw new Error(`Failed to poll commits: ${message}`);
       }
     }),
+
+  /** Open Source dashboard: repo stats (stars, forks, language) for all user projects with a GitHub URL */
+  getOpenSourceRepos: protectedProcedure.query(async ({ ctx }) => {
+    const projects = await ctx.db.project.findMany({
+      where: {
+        UserToProjects: { some: { userId: ctx.userId } },
+        deletedAt: null,
+        githubUrl: { not: null },
+      },
+      select: { id: true, name: true, githubUrl: true, githubToken: true },
+    });
+
+    const { getRepoStats } = await import("@/server/lib/github");
+    const { env } = await import("@/server/config/env");
+    const results: Array<{
+      projectId: string;
+      projectName: string;
+      githubUrl: string;
+      fullName: string;
+      stars: number;
+      forks: number;
+      language: string | null;
+      description: string | null;
+      error?: string;
+    }> = [];
+
+    for (const p of projects) {
+      const url = p.githubUrl!;
+      const token = p.githubToken || env.GITHUB_TOKEN || "";
+      try {
+        const stats = await getRepoStats(url, token);
+        results.push({
+          projectId: p.id,
+          projectName: p.name,
+          githubUrl: url,
+          fullName: stats.fullName,
+          stars: stats.stars,
+          forks: stats.forks,
+          language: stats.language,
+          description: stats.description,
+        });
+      } catch (err: any) {
+        results.push({
+          projectId: p.id,
+          projectName: p.name,
+          githubUrl: url,
+          fullName: url.replace(/^https:\/\/github.com\//, "").replace(/\.git$/, ""),
+          stars: 0,
+          forks: 0,
+          language: null,
+          description: null,
+          error: err?.message ?? "Could not load repo stats",
+        });
+      }
+    }
+
+    return results;
+  }),
 
   loadRepositoryFiles: protectedProcedure
     .input(
@@ -621,14 +684,6 @@ export const projectRouter = createTRPCRouter({
         throw new Error("User not found");
       }
 
-      // In a real implementation, you would:
-      // 1. Queue the export job (using a job queue like Bull, Agenda, etc.)
-      // 2. Process the data asynchronously
-      // 3. Generate the export file (JSON, CSV, XLSX, PDF)
-      // 4. Upload to cloud storage (AWS S3, Google Cloud Storage, etc.)
-      // 5. Send email with download link
-
-      // For now, we'll simulate the process
       console.log(`📊 Export initiated for project: ${project.name}`);
       console.log(`📧 Export will be sent to: ${user.emailAddress}`);
       console.log(`📋 Export options:`, input);
@@ -636,15 +691,43 @@ export const projectRouter = createTRPCRouter({
       // Simulate processing time
       await new Promise(resolve => setTimeout(resolve, 1000));
 
-      // Process the data and generate the file
-      // - Send email notification
-
       return {
         success: true,
         message: "Export started! You will receive an email when ready.",
         exportId: `export_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         estimatedTime: "5-10 minutes",
       };
+    }),
+
+  deleteProject: protectedProcedure
+    .input(z.object({ projectId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const project = await ctx.db.project.findFirst({
+        where: {
+          id: input.projectId,
+          UserToProjects: {
+            some: {
+              userId: ctx.userId,
+            },
+          },
+        },
+      });
+
+      if (!project) {
+        throw new Error("Project not found or access denied");
+      }
+
+      // First, delete UserToProject associations (no cascade on this relation)
+      await ctx.db.userToProject.deleteMany({
+        where: { projectId: input.projectId },
+      });
+
+      // Then delete the project itself (other relations like Comment will Cascade according to schema)
+      await ctx.db.project.delete({
+        where: { id: input.projectId },
+      });
+
+      return { success: true };
     }),
 
 });

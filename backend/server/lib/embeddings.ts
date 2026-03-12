@@ -19,7 +19,7 @@ const MAX_SUMMARY_LENGTH = 500;
 export async function summarizeDocument(content: string, fileName?: string): Promise<string> {
   try {
     const genAI = await getGeminiClient();
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
 
     const prompt = `
 You are an expert code analyst. Provide a concise, technical summary of this file that will be useful for a RAG (Retrieval Augmented Generation) system.
@@ -72,7 +72,7 @@ export async function getEmbeddings(text: string): Promise<number[]> {
     return embedding.values;
   } catch (error) {
     console.error('Error generating embeddings:', error);
-    return generateFallbackEmbedding(text);
+    throw new Error(`Failed to generate embeddings: ${error instanceof Error ? error.message : String(error)}`);
   }
 }
 
@@ -106,7 +106,7 @@ export function cosineSimilarity(a: number[], b: number[]): number {
 export async function generateRAGAnswer(question: string, context: string[]): Promise<string> {
   try {
     const genAI = await getGeminiClient();
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
 
     const contextText = context.join('\n\n---\n\n');
 
@@ -138,7 +138,7 @@ Answer:
   }
 }
 
-const FALLBACK_EMBEDDING_DIMENSION = 384;
+const FALLBACK_EMBEDDING_DIMENSION = 768;
 
 function generateDocumentFallbackSummary(content: string, fileName?: string): string {
   const lines = content.split('\n');
@@ -173,24 +173,7 @@ function generateDocumentFallbackSummary(content: string, fileName?: string): st
   return summary + '(Basic analysis - AI unavailable)';
 }
 
-function generateFallbackEmbedding(text: string): number[] {
-  const dimension = FALLBACK_EMBEDDING_DIMENSION;
-  const embedding = new Array(dimension).fill(0);
-
-  for (let i = 0; i < text.length; i++) {
-    const char = text.charCodeAt(i);
-    const index = char % dimension;
-    embedding[index] += char / 1000;
-  }
-  const norm = Math.sqrt(embedding.reduce((sum, val) => sum + val * val, 0));
-  if (norm > 0) {
-    for (let i = 0; i < embedding.length; i++) {
-      embedding[i] /= norm;
-    }
-  }
-
-  return embedding;
-}
+// Fallback embedding function removed because it polluted vector search results with semantic noise.
 
 export default {
   summarizeDocument,

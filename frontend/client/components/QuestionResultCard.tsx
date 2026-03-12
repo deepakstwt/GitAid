@@ -66,26 +66,24 @@ export function QuestionResultCard({
   };
 
   return (
-    <Card className="w-full shadow-lg border-2 border-muted/50 bg-gradient-to-br from-background via-background/95 to-muted/20 mt-6 mb-8">
-      <CardContent className="p-6 bg-background/95">
+    <Card className="w-full shadow-2xl border border-white/5 bg-[#0A0A0B] mt-6 mb-8 rounded-3xl overflow-hidden relative">
+      <div className="absolute inset-0 bg-grid-white/[0.01] pointer-events-none" />
+      <CardContent className="p-8 relative z-10">
         {/* Header with user info and timestamp */}
-        <div className="flex items-center justify-between mb-6 border-b pb-4 border-muted/60">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-              <User className="w-5 h-5 text-primary" />
+        <div className="flex items-center justify-between mb-8 border-b border-white/5 pb-6">
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center shadow-lg">
+              <User className="w-5 h-5 text-zinc-400" />
             </div>
             <div>
-              <p className="font-medium text-foreground">You</p>
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Clock className="w-3 h-3" />
-                <span>{format(new Date(), "MMM d, yyyy 'at' h:mm a")}</span>
-              </div>
+              <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-0.5">Contributor</p>
+              <p className="font-bold text-white tracking-tight">Engineering Lead</p>
             </div>
           </div>
           <Button
             variant="outline"
             size="sm"
-            className="flex items-center gap-2 border-primary/20"
+            className="flex items-center gap-2 bg-white text-[#08080c] hover:bg-zinc-200 border-none rounded-xl font-bold h-10 px-5"
             onClick={handleSaveQuestion}
             disabled={isSaving}
           >
@@ -95,68 +93,42 @@ export function QuestionResultCard({
         </div>
 
         {/* Question display */}
-        <div className="mb-6">
-          <Badge variant="outline" className="text-sm px-4 py-2 bg-muted/50 border-primary/20 mb-3">
-            <MessageSquare className="w-3 h-3 mr-2" />
+        <div className="mb-8 p-6 bg-white/[0.02] border border-white/5 rounded-2xl">
+          <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-3">Engineering Query</p>
+          <p className="text-xl font-bold text-white tracking-tight leading-snug">
             {question}
-          </Badge>
+          </p>
         </div>
 
         {/* Main content area with AI answer and file references */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* AI Answer Section */}
           <div className="space-y-4">
-            <h3 className="font-bold text-lg flex items-center gap-3">
-              <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center">
-                <Brain className="w-4 h-4 text-white" />
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-white/5 border border-white/10 shadow-lg">
+                <Brain className="w-4 h-4 text-zinc-400" />
               </div>
-              AI Response
-            </h3>
-            <Card className="shadow-md border border-muted/50 h-[50vh]">
-              <CardContent className="p-6 h-full">
-                <ScrollArea className="h-full pr-4">
-                  <div className="prose prose-lg max-w-none dark:prose-invert">
+              <h3 className="font-bold text-base text-white tracking-tight">Contextual Analysis</h3>
+            </div>
+            <div className="bg-white/[0.02] border border-white/5 rounded-2xl h-[50vh] overflow-hidden">
+              <CardContent className="p-0 h-full">
+                <ScrollArea className="h-full">
+                  <div className="p-6 prose prose-invert prose-base max-w-none prose-headings:text-white prose-p:text-zinc-300 prose-strong:text-white prose-pre:bg-zinc-950 prose-pre:border prose-pre:border-white/5">
                     <ReactMarkdown 
                       remarkPlugins={[remarkGfm]}
                       components={{
                         code: ({ className, children, ...props }) => (
                           <code
-                            className={`${className} bg-primary/15 text-primary px-2 py-1 rounded-md text-sm font-mono font-semibold`}
+                            className={`${className} bg-white/10 text-white px-1.5 py-0.5 rounded text-[13px] font-mono`}
                             {...props}
                           >
                             {children}
                           </code>
                         ),
                         pre: ({ children }) => (
-                          <pre className="bg-muted/80 p-6 rounded-xl text-sm overflow-auto border border-muted font-mono leading-relaxed">
+                          <pre className="bg-zinc-950 p-5 rounded-xl text-[13px] overflow-auto border border-white/5 font-mono leading-relaxed my-4">
                             {children}
                           </pre>
-                        ),
-                        h1: ({ children }) => (
-                          <h1 className="text-2xl font-bold mt-8 mb-6 border-b-2 border-primary/20 pb-3 text-foreground/90">{children}</h1>
-                        ),
-                        h2: ({ children }) => (
-                          <h2 className="text-xl font-semibold mt-6 mb-4 text-foreground/90">{children}</h2>
-                        ),
-                        h3: ({ children }) => (
-                          <h3 className="text-lg font-medium mt-5 mb-3 text-foreground/90">{children}</h3>
-                        ),
-                        p: ({ children }) => (
-                          <p className="mb-5 leading-relaxed text-foreground/90 text-base font-medium">{children}</p>
-                        ),
-                        ul: ({ children }) => (
-                          <ul className="mb-5 ml-6 space-y-2">{children}</ul>
-                        ),
-                        ol: ({ children }) => (
-                          <ol className="mb-5 ml-6 space-y-2">{children}</ol>
-                        ),
-                        li: ({ children }) => (
-                          <li className="text-foreground">{children}</li>
-                        ),
-                        blockquote: ({ children }) => (
-                          <blockquote className="border-l-4 border-primary pl-6 italic bg-primary/5 p-6 rounded-r-xl my-6">
-                            {children}
-                          </blockquote>
                         ),
                       }}
                     >
@@ -165,25 +137,25 @@ export function QuestionResultCard({
                   </div>
                 </ScrollArea>
               </CardContent>
-            </Card>
+            </div>
           </div>
 
           {/* Code References Section */}
           <div className="space-y-4">
-            <h3 className="font-bold text-lg flex items-center gap-3">
-              <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center">
-                <FileText className="w-4 h-4 text-white" />
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-white/5 border border-white/10 shadow-lg">
+                <FileText className="w-4 h-4 text-zinc-400" />
               </div>
-              Referenced Files
-              <Badge variant="secondary" className="ml-2 px-3 py-1">
-                {fileReferences.length} files
-              </Badge>
-            </h3>
-            <Card className="shadow-md border border-muted/50 h-[50vh]">
+              <h3 className="font-bold text-base text-white tracking-tight">
+                Referenced Metadata 
+                <span className="ml-2 text-[10px] font-black text-zinc-500 uppercase tracking-widest bg-white/5 px-2 py-0.5 rounded border border-white/10">{fileReferences.length} units</span>
+              </h3>
+            </div>
+            <div className="bg-white/[0.02] border border-white/5 rounded-2xl h-[50vh] overflow-hidden">
               <CardContent className="p-4 h-full">
                 <CodeReferences fileReferences={fileReferences} />
               </CardContent>
-            </Card>
+            </div>
           </div>
         </div>
       </CardContent>

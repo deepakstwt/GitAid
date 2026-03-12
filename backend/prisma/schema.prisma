@@ -27,6 +27,7 @@ model Project {
   updatedAt            DateTime              @updatedAt
   name                 String
   githubUrl            String?
+  githubToken          String?
   deletedAt            DateTime?
   archived             Boolean               @default(false)
   archivedAt           DateTime?

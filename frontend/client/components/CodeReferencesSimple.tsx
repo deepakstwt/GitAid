@@ -55,9 +55,9 @@ export function CodeReferences({ fileReferences }: CodeReferencesProps) {
 
   const getSimilarityColor = (similarity: number) => {
     const percent = Math.round(similarity * 100);
-    if (percent >= 80) return 'from-emerald-500 to-green-500';
-    if (percent >= 60) return 'from-blue-500 to-cyan-500';
-    return 'from-yellow-500 to-orange-500';
+    if (percent >= 80) return 'from-white to-zinc-400';
+    if (percent >= 60) return 'from-zinc-400 to-zinc-600';
+    return 'from-zinc-700 to-zinc-900';
   };
 
   if (!fileReferences.length) {
@@ -86,17 +86,17 @@ export function CodeReferences({ fileReferences }: CodeReferencesProps) {
             <button
               key={index}
               onClick={() => setSelectedTab(index)}
-              className={`group relative p-4 rounded-xl border-2 transition-all duration-200 text-left ${selectedTab === index
-                ? 'bg-gradient-to-br from-blue-600/20 to-purple-600/20 border-blue-500/50 shadow-lg shadow-blue-500/10'
-                : 'bg-gray-900/40 border-white/10 hover:border-white/20 hover:bg-gray-900/60'
+              className={`group relative p-4 rounded-xl border transition-all duration-300 text-left ${selectedTab === index
+                ? 'bg-white/5 border-white/20 shadow-2xl'
+                : 'bg-white/[0.02] border-white/5 hover:border-white/10 hover:bg-white/[0.04]'
                 }`}
             >
               <div className="flex items-start gap-3">
                 <div className={`p-2 rounded-lg flex-shrink-0 ${selectedTab === index
-                  ? 'bg-gradient-to-br from-blue-500 to-purple-500'
-                  : 'bg-gray-800/60'
+                  ? 'bg-white'
+                  : 'bg-zinc-800'
                   }`}>
-                  <FileText className={`w-4 h-4 ${selectedTab === index ? 'text-white' : 'text-gray-400'
+                  <FileText className={`w-4 h-4 ${selectedTab === index ? 'text-[#08080c]' : 'text-zinc-500'
                     }`} />
                 </div>
                 <div className="flex-1 min-w-0">
@@ -106,18 +106,17 @@ export function CodeReferences({ fileReferences }: CodeReferencesProps) {
                   </p>
                   <div className="flex items-center gap-2">
                     <Badge
-                      className={`bg-gradient-to-r ${getSimilarityColor(file.similarity)} text-white text-xs px-2 py-0.5 font-semibold`}
+                      className={`bg-gradient-to-r ${getSimilarityColor(file.similarity)} ${selectedTab === index ? 'text-black' : 'text-white'} text-[9px] px-1.5 py-0.5 font-black uppercase tracking-widest border-none`}
                     >
-                      {similarityPercent}%
+                      {similarityPercent}% Match
                     </Badge>
-                    <span className="text-xs text-gray-400">match</span>
                   </div>
                 </div>
               </div>
 
               {/* Active indicator */}
               {selectedTab === index && (
-                <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
+                <div className="absolute top-3 right-3 w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)] animate-pulse" />
               )}
             </button>
           );
@@ -135,31 +134,31 @@ export function CodeReferences({ fileReferences }: CodeReferencesProps) {
                 className="flex-1 flex flex-col min-h-0 mt-0 space-y-4"
               >
                 {/* File Header */}
-                <div className="flex items-center justify-between p-4 bg-gray-900/60 rounded-xl border border-white/10">
+                <div className="flex items-center justify-between p-5 bg-white/[0.02] rounded-2xl border border-white/5">
                   <div className="flex items-center gap-3">
-                    <div className="p-2 bg-gradient-to-br from-blue-500 to-purple-500 rounded-lg">
-                      <FileCode className="w-5 h-5 text-white" />
+                    <div className="p-2.5 bg-white rounded-xl shadow-lg">
+                      <FileCode className="w-5 h-5 text-[#08080c]" />
                     </div>
                     <div>
-                      <h4 className="font-bold text-base text-white">{file.fileName}</h4>
-                      <p className="text-xs text-gray-400">Code reference file</p>
+                      <h4 className="font-bold text-sm text-white tracking-tight">{file.fileName}</h4>
+                      <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Metadata Reference</p>
                     </div>
                   </div>
                   <Badge
-                    className={`bg-gradient-to-r ${getSimilarityColor(file.similarity)} text-white px-3 py-1 font-semibold`}
+                    className={`bg-zinc-800 text-zinc-400 border border-white/10 px-3 py-1 text-[10px] font-black uppercase tracking-widest`}
                   >
-                    {Math.round(file.similarity * 100)}% similarity
+                    {Math.round(file.similarity * 100)}% Semantic Match
                   </Badge>
                 </div>
 
                 {/* Summary Section */}
                 <div className="flex-1 flex flex-col min-h-0">
-                  <div className="flex items-center gap-2 mb-3">
-                    <div className="p-1.5 bg-gradient-to-br from-green-500/20 to-emerald-500/20 rounded-lg">
-                      <Zap className="w-4 h-4 text-green-400" />
+                  <div className="flex items-center gap-2 mb-4">
+                    <div className="p-1.5 bg-white/5 border border-white/10 rounded-lg">
+                      <Zap className="w-4 h-4 text-zinc-400" />
                     </div>
-                    <h5 className="text-sm font-bold text-white uppercase tracking-wide">
-                      Summary
+                    <h5 className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">
+                      In-context Summary
                     </h5>
                   </div>
                   <div className="flex-1 bg-gray-900/40 border border-white/10 rounded-xl p-4 overflow-auto custom-scrollbar">
@@ -173,12 +172,12 @@ export function CodeReferences({ fileReferences }: CodeReferencesProps) {
                 {file.sourceCode && (
                   <div className="flex flex-col min-h-0">
                     <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center gap-2">
-                        <div className="p-1.5 bg-gradient-to-br from-purple-500/20 to-pink-500/20 rounded-lg">
-                          <Code className="w-4 h-4 text-purple-400" />
+                    <div className="flex items-center gap-2">
+                        <div className="p-1.5 bg-white/5 border border-white/10 rounded-lg">
+                          <Code className="w-4 h-4 text-zinc-400" />
                         </div>
-                        <h5 className="text-sm font-bold text-white uppercase tracking-wide">
-                          Source Code
+                        <h5 className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">
+                          Source Segment
                         </h5>
                       </div>
                       <button

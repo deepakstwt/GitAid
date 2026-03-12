@@ -65,7 +65,7 @@ Answer:`;
 
     // Step 5: Generate complete response (not streaming for now)
     const result = await streamText({
-      model: google('models/gemini-1.5-flash'),
+      model: google('gemini-2.0-flash'),
       prompt,
       temperature: 0.3,
     });

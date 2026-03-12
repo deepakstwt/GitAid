@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Github, RefreshCcw, ExternalLink, Bot } from 'lucide-react';
+import { Github, RefreshCcw, ExternalLink, Cpu, ChevronDown, ChevronUp } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { api } from '@/trpc/react';
@@ -11,6 +11,49 @@ import useRefetch from "@/hooks/use-refetch";
 interface CommitLogProps {
     project: any;
 }
+
+const CommitSummary = ({ summary }: { summary: string }) => {
+    const [isExpanded, setIsExpanded] = useState(false);
+
+    // Auto-expand if the summary is very short
+    const isLong = summary.length > 250;
+
+    return (
+        <div className="mt-5 relative">
+            <div className="relative p-5 bg-white/[0.02] border border-white/5 rounded-2xl overflow-hidden transition-all duration-300">
+                <div className="flex items-center gap-2.5 mb-3">
+                    <div className="flex items-center justify-center w-5 h-5 rounded bg-white/5 border border-white/10">
+                        <Cpu className="w-3 h-3 text-zinc-400" />
+                    </div>
+                    <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-[0.15em]">Contextual Summary</span>
+                    <div className="h-[1px] flex-1 bg-white/[0.05]" />
+                </div>
+
+                <div className="relative">
+                    <p className={cn(
+                        "text-zinc-300 leading-relaxed text-[13px] font-medium selection:bg-white/10 whitespace-pre-wrap transition-all duration-300",
+                        !isExpanded && isLong && "line-clamp-3"
+                    )}>
+                        {summary}
+                    </p>
+
+                    {!isExpanded && isLong && (
+                        <div className="absolute bottom-0 left-0 right-0 h-10 bg-gradient-to-t from-zinc-950/20 to-transparent pointer-events-none" />
+                    )}
+                </div>
+
+                {isLong && (
+                    <button
+                        onClick={() => setIsExpanded(!isExpanded)}
+                        className="mt-3 text-[10px] font-bold uppercase tracking-widest text-zinc-500 hover:text-white transition-colors"
+                    >
+                        {isExpanded ? "Show Less" : "Expand Summary"}
+                    </button>
+                )}
+            </div>
+        </div>
+    );
+};
 
 export const CommitLog: React.FC<CommitLogProps> = ({ project }) => {
     const [commits, setCommits] = useState<any[]>([]);
@@ -170,7 +213,7 @@ export const CommitLog: React.FC<CommitLogProps> = ({ project }) => {
                         size="sm"
                         onClick={handlePollCommits}
                         disabled={isPolling || !project?.githubUrl}
-                        className="bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl h-8 px-3 text-[11px] font-bold"
+                        className="bg-white text-[#08080c] hover:bg-zinc-200 rounded-lg h-8 px-4 text-[11px] font-bold transition-all"
                     >
                         {isPolling ? 'Syncing...' : 'Poll Commits'}
                     </Button>
@@ -230,29 +273,7 @@ export const CommitLog: React.FC<CommitLogProps> = ({ project }) => {
                                 <p className="text-sm text-zinc-400 group-hover/commit:text-zinc-200 transition-colors leading-relaxed mb-3">{commit.commit.message}</p>
 
                                 {commit.summary && (
-                                    <div className="mt-5 relative group/insight">
-                                        {/* Backdrop Glow */}
-                                        <div className="absolute -inset-1 bg-gradient-to-r from-emerald-500/20 to-teal-500/20 rounded-[2rem] blur-lg opacity-0 group-hover/insight:opacity-100 transition duration-1000 group-hover/insight:duration-200" />
-
-                                        <div className="relative p-5 bg-zinc-950/40 backdrop-blur-md rounded-[1.5rem] border border-emerald-500/20 shadow-2xl overflow-hidden">
-                                            {/* Decorative Corner */}
-                                            <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-emerald-500/10 to-transparent -mr-12 -mt-12 rounded-full blur-2xl" />
-
-                                            <div className="flex items-center gap-2.5 mb-3">
-                                                <div className="flex items-center justify-center w-6 h-6 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
-                                                    <Bot className="w-3.5 h-3.5 text-emerald-400" />
-                                                </div>
-                                                <span className="text-[10px] font-black text-emerald-400 uppercase tracking-[0.2em]">AI Intelligence Insight</span>
-                                                <div className="h-[1px] flex-1 bg-gradient-to-r from-emerald-500/20 to-transparent" />
-                                            </div>
-
-                                            <div className="relative">
-                                                <p className="text-zinc-200 leading-relaxed text-[13px] font-medium selection:bg-emerald-500/30">
-                                                    {commit.summary}
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </div>
+                                    <CommitSummary summary={commit.summary} />
                                 )}
                             </div>
                         </div>

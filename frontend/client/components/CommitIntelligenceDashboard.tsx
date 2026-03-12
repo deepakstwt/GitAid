@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   GitCommit,
-  Brain,
+  Cpu,
   Search,
   RefreshCw,
   Eye,
@@ -19,7 +19,9 @@ import {
   Activity,
   Code2,
   GitBranch,
-  Bot
+  Settings,
+  Lock,
+  ExternalLink,
 } from "lucide-react";
 import { toast } from "sonner";
 import { api } from "@/trpc/react";
@@ -52,6 +54,8 @@ export default function CommitIntelligenceDashboard({ projectId, projectName }: 
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCommit, setSelectedCommit] = useState<CommitData | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [tokenInput, setTokenInput] = useState("");
 
   const utils = api.useUtils();
 
@@ -75,6 +79,27 @@ export default function CommitIntelligenceDashboard({ projectId, projectName }: 
     }
   });
 
+  const updateProjectMutation = api.project.updateProject.useMutation({
+    onSuccess: () => {
+      toast.success("Security context updated successfully.");
+      setIsSettingsOpen(false);
+    },
+    onError: (error) => {
+      toast.error("Security update failed: " + error.message);
+    }
+  });
+
+  const handleUpdateToken = () => {
+    if (!tokenInput.trim()) {
+      toast.error("Token string cannot be null.");
+      return;
+    }
+    updateProjectMutation.mutate({
+      id: projectId,
+      githubToken: tokenInput.trim()
+    });
+  };
+
   const handlePollCommits = () => {
     if (!projectId) return;
     pollMutation.mutate({ projectId });
@@ -93,7 +118,7 @@ export default function CommitIntelligenceDashboard({ projectId, projectName }: 
     additions: commit.linesAdded || 0,
     deletions: commit.linesDeleted || 0,
     filesChanged: commit.filesChanged || 0,
-    aiSummary: commit.summary || "AI analysis not available for this commit.",
+    aiSummary: commit.summary || "Technical analysis not available for this event.",
     type: (commit.commitType as any) || "update"
   }));
 
@@ -112,18 +137,18 @@ export default function CommitIntelligenceDashboard({ projectId, projectName }: 
 
   const getCommitTypeColor = (type: string) => {
     switch (type) {
-      case "feature": return "bg-emerald-500/10 text-emerald-400 border-emerald-500/20";
+      case "feature": return "bg-white/5 text-white border-white/10";
       case "bugfix": return "bg-rose-500/10 text-rose-400 border-rose-500/20";
-      case "refactor": return "bg-indigo-500/10 text-indigo-400 border-indigo-500/20";
-      default: return "bg-zinc-500/10 text-zinc-400 border-zinc-500/20";
+      case "refactor": return "bg-zinc-800 text-zinc-300 border-zinc-700";
+      default: return "bg-zinc-900 text-zinc-500 border-white/5";
     }
   };
 
   if (!isLoaded || commitsLoading) {
     return (
       <div className="flex flex-col items-center justify-center py-20 animate-pulse">
-        <div className="w-12 h-12 rounded-full border-t-2 border-indigo-500 animate-spin mb-4" />
-        <p className="text-zinc-500 text-xs font-black uppercase tracking-widest">Hydrating Intelligence...</p>
+        <div className="w-10 h-10 rounded-full border-t-2 border-white/20 animate-spin mb-4" />
+        <p className="text-zinc-500 text-[10px] font-black uppercase tracking-widest">Parsing Analytics...</p>
       </div>
     );
   }
@@ -138,9 +163,19 @@ export default function CommitIntelligenceDashboard({ projectId, projectName }: 
               <TrendingUp className="w-24 h-24" />
             </div>
             <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-1">Code Flux</p>
-            <div className="flex items-end gap-3">
-              <span className="text-3xl font-bold text-white tracking-tight">+{totalAdditions}</span>
-              <span className="text-sm font-bold text-rose-500 mb-1">-{totalDeletions}</span>
+            <div className="flex items-end justify-between">
+              <div className="flex items-end gap-3">
+                <span className="text-3xl font-bold text-white tracking-tight">+{totalAdditions}</span>
+                <span className="text-sm font-bold text-rose-500 mb-1">-{totalDeletions}</span>
+              </div>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="w-8 h-8 rounded-lg text-zinc-600 hover:text-white hover:bg-white/5 transition-all"
+                onClick={() => setIsSettingsOpen(true)}
+              >
+                <Settings className="w-4 h-4" />
+              </Button>
             </div>
           </CardContent>
         </Card>
@@ -158,18 +193,18 @@ export default function CommitIntelligenceDashboard({ projectId, projectName }: 
           </CardContent>
         </Card>
 
-        <Card className="bg-indigo-600/10 border-indigo-500/20 shadow-2xl overflow-hidden group cursor-pointer hover:bg-indigo-600/20 transition-colors" onClick={handlePollCommits}>
+        <Card className="bg-white/5 border-white/10 shadow-2xl overflow-hidden group cursor-pointer hover:bg-white/10 transition-colors" onClick={handlePollCommits}>
           <CardContent className="p-6 relative">
-            <div className="absolute -right-4 -bottom-4 opacity-10 group-hover:rotate-45 transition-transform duration-700">
-              <RefreshCw className="w-24 h-24 text-indigo-400" />
+            <div className="absolute -right-4 -bottom-4 opacity-5 group-hover:rotate-45 transition-transform duration-700">
+              <RefreshCw className="w-24 h-24 text-white" />
             </div>
-            <p className="text-[10px] font-black uppercase tracking-widest text-indigo-400 mb-1">Live Status</p>
+            <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-1">State</p>
             <div className="flex items-center gap-2">
               <span className="text-3xl font-bold text-white tracking-tight">
-                {pollMutation.isPending ? "Syncing..." : "Up to Date"}
+                {pollMutation.isPending ? "Syncing..." : "Live"}
               </span>
               {!pollMutation.isPending && (
-                <div className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)] animate-pulse" />
+                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(52,211,153,0.5)] animate-pulse" />
               )}
             </div>
           </CardContent>
@@ -179,12 +214,12 @@ export default function CommitIntelligenceDashboard({ projectId, projectName }: 
       {/* Control Bar */}
       <div className="flex flex-col sm:flex-row gap-4 items-center justify-between bg-white/[0.02] border border-white/5 p-3 rounded-2xl">
         <div className="relative w-full sm:w-80 group">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-600 group-focus-within:text-indigo-400 transition-colors" />
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-600 group-focus-within:text-white transition-colors" />
           <Input
-            placeholder="Search Intelligence Stream..."
+            placeholder="Search change stream..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 bg-black/20 border-white/5 rounded-xl h-10 text-xs text-white placeholder:text-zinc-600 focus:border-indigo-500/50 transition-all font-medium"
+            className="pl-10 bg-black/20 border-white/5 rounded-xl h-10 text-xs text-white placeholder:text-zinc-600 focus:border-white/20 transition-all font-medium"
           />
         </div>
         <div className="flex items-center gap-2">
@@ -207,9 +242,9 @@ export default function CommitIntelligenceDashboard({ projectId, projectName }: 
                 className="group/card"
                 onClick={() => handleCommitClick(commit)}
               >
-                <div className="bg-white/[0.03] hover:bg-white/[0.06] border border-white/5 hover:border-indigo-500/30 p-5 rounded-2xl transition-all duration-300 cursor-pointer shadow-xl relative overflow-hidden">
+                <div className="bg-white/[0.02] hover:bg-white/[0.04] border border-white/5 hover:border-white/20 p-5 rounded-2xl transition-all duration-300 cursor-pointer shadow-xl relative overflow-hidden">
                   {/* Hover indicator gradient */}
-                  <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/5 to-transparent opacity-0 group-hover/card:opacity-100 transition-opacity" />
+                  <div className="absolute inset-0 bg-gradient-to-r from-white/5 to-transparent opacity-0 group-hover/card:opacity-100 transition-opacity" />
 
                   <div className="flex items-start gap-4 relative z-10">
                     <Avatar className="w-10 h-10 border-2 border-white/5 group-hover/card:scale-105 transition-transform shadow-lg">
@@ -305,24 +340,24 @@ export default function CommitIntelligenceDashboard({ projectId, projectName }: 
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="p-2.5 rounded-xl bg-indigo-500/10 border border-indigo-500/20 shadow-lg shadow-indigo-500/5">
-                    <Bot className="w-5 h-5 text-indigo-400" />
+                  <div className="p-2.5 rounded-xl bg-white/5 border border-white/10 shadow-lg">
+                    <Cpu className="w-5 h-5 text-zinc-400" />
                   </div>
                   <div>
-                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-400/80">AI Analysis</p>
-                    <h4 className="text-sm font-bold text-white tracking-tight">Intelligence Synthesis</h4>
+                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">Contextual Summary</p>
+                    <h4 className="text-sm font-bold text-white tracking-tight">Technical Analysis</h4>
                   </div>
                 </div>
                 <div className="h-6 w-[1px] bg-white/5" />
-                <Badge variant="outline" className="bg-indigo-500/5 border-indigo-500/20 text-indigo-400 text-[9px] font-black tracking-widest px-2 py-1">GENERATIVE AI</Badge>
+                <Badge variant="outline" className="bg-white/5 border-white/10 text-zinc-500 text-[9px] font-black tracking-widest px-2 py-1 uppercase">Automated Gen</Badge>
               </div>
 
               <div className="relative p-6 bg-zinc-900/40 backdrop-blur-sm border border-white/5 rounded-[1.5rem] shadow-2xl overflow-hidden group/summary">
                 {/* Subtle Glow */}
                 <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 blur-3xl rounded-full -mr-16 -mt-16 group-hover/summary:bg-indigo-500/10 transition-colors duration-700" />
 
-                <div className="absolute top-4 right-6 opacity-10 group-hover:opacity-20 transition-opacity">
-                  <Brain className="w-10 h-10 text-indigo-400" />
+                <div className="absolute top-4 right-6 opacity-5 group-hover:opacity-10 transition-opacity">
+                  <Cpu className="w-10 h-10 text-white" />
                 </div>
 
                 <p className="text-sm text-zinc-200 leading-relaxed font-medium relative z-10 selection:bg-indigo-500/30">
@@ -353,6 +388,67 @@ export default function CommitIntelligenceDashboard({ projectId, projectName }: 
                 className="bg-zinc-800 border-white/5 hover:bg-zinc-700 text-zinc-300 text-xs font-bold rounded-xl h-11 px-6 transition-all"
               >
                 Close Insights
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+      {/* GitHub Security Context Dialog */}
+      <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
+        <DialogContent className="max-w-md bg-zinc-950 border border-white/10 p-0 overflow-hidden shadow-2xl rounded-3xl">
+          <DialogHeader className="p-8 pb-4 bg-gradient-to-br from-indigo-500/10 to-transparent border-b border-white/5">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 rounded-xl bg-white/5 border border-white/10">
+                <Lock className="w-5 h-5 text-indigo-400" />
+              </div>
+              <DialogTitle className="text-lg font-bold text-white tracking-tight">Authentication Override</DialogTitle>
+            </div>
+          </DialogHeader>
+
+          <div className="p-8 space-y-6">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500">GitHub Access Token</p>
+                <a 
+                  href="https://github.com/settings/tokens" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-[9px] font-black uppercase tracking-widest text-indigo-400 hover:text-indigo-300 flex items-center gap-1 transition-colors"
+                >
+                  Generate Token <ExternalLink className="w-2.5 h-2.5" />
+                </a>
+              </div>
+              
+              <Input
+                type="password"
+                placeholder="ghp_••••••••••••••••"
+                value={tokenInput}
+                onChange={(e) => setTokenInput(e.target.value)}
+                className="bg-black/40 border-white/5 rounded-xl h-12 text-sm text-white placeholder:text-zinc-700 focus:border-indigo-500/50 transition-all font-medium"
+              />
+              
+              <div className="p-4 bg-indigo-500/5 border border-indigo-500/10 rounded-2xl space-y-2">
+                <p className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest opacity-80">Security Protocol</p>
+                <p className="text-xs text-zinc-400 leading-relaxed font-medium">
+                  Use this to bypass global API rate limits. Tokens are stored as part of the project metadata and used for all future contextual sync operations.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex gap-3 pt-4">
+              <Button
+                variant="outline"
+                onClick={() => setIsSettingsOpen(false)}
+                className="flex-1 bg-transparent border-white/5 hover:bg-white/5 text-zinc-500 text-xs font-bold rounded-xl h-11 transition-all"
+              >
+                Abort
+              </Button>
+              <Button
+                onClick={handleUpdateToken}
+                disabled={updateProjectMutation.isPending}
+                className="flex-1 bg-white hover:bg-zinc-200 text-black text-xs font-black rounded-xl h-11 transition-all uppercase tracking-widest"
+              >
+                {updateProjectMutation.isPending ? "Syncing..." : "Update Token"}
               </Button>
             </div>
           </div>
