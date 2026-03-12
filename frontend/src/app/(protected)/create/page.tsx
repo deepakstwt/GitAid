@@ -32,6 +32,9 @@ export default function CreateProjectPage() {
   const createProjectMutation = api.project.createProject.useMutation({
     onSuccess: async (data) => {
       toast.success(`Project "${data.name}" created successfully!`);
+      if (githubUrl.trim()) {
+        toast.info('Commit history is syncing in the background — it will appear in your dashboard shortly.', { duration: 6000 });
+      }
       
       // Set the newly created project as active
       setProjectId(data.id);

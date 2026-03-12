@@ -1,5 +1,18 @@
+import path from "path";
 import { createEnv } from "@t3-oss/env-nextjs";
 import { z } from "zod";
+
+// Load backend/.env so GEMINI_API_KEY etc. are available when Next runs from frontend
+try {
+  const { config } = await import("dotenv");
+  const cwd = process.cwd();
+  const fromFrontend = path.join(cwd, "..", "backend", ".env");
+  const fromRoot = path.join(cwd, "backend", ".env");
+  config({ path: fromFrontend, override: true });
+  config({ path: fromRoot, override: true });
+} catch (_) {
+  // dotenv optional; Next may have already loaded env from frontend root
+}
 
 export const env = createEnv({
   server: {

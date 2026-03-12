@@ -22,7 +22,7 @@ export async function getGeminiClient(): Promise<GoogleGenerativeAI> {
 export async function summarizeCommit(diff: string): Promise<string> {
   try {
     const genAI = await getGeminiClient();
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
 
     const systemPrompt = `
 You are an expert software engineer analyzing Git commit diffs. Your task is to provide concise, insightful summaries of code changes.
@@ -66,14 +66,10 @@ ${diff}
 
     // Clean up the response and ensure it's concise
     const cleanSummary = summary.trim();
-    if (cleanSummary.length > 300) {
-      return cleanSummary.substring(0, 297) + '...';
-    }
 
     return cleanSummary;
   } catch (error) {
-    console.error('Error generating commit summary with Gemini:', error);
-
+    console.error('🔴 Error generating commit summary with Gemini:', error);
     // Fallback to basic pattern analysis
     return generateFallbackSummary(diff);
   }

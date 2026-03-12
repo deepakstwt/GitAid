@@ -58,7 +58,7 @@ import {
   UserPlus,
   Archive,
   Download,
-  Bot,
+  Cpu,
   BarChart3,
   ChevronDown,
   ChevronRight,
@@ -123,13 +123,13 @@ const DashboardPage = () => {
     },
   });
 
-  const handleInviteMember = (data: any) => {
+  const handleInviteMember = async (data: any) => {
     if (!projectId) {
       toast.error("No project selected");
       return;
     }
 
-    addTeamMemberMutation.mutate({
+    await addTeamMemberMutation.mutateAsync({
       projectId,
       email: data.email,
       name: data.name,
@@ -213,53 +213,35 @@ const DashboardPage = () => {
   return (
     <>
       {/* ── Top project navbar ─────────────────────────────────────────── */}
-      <div className="sticky top-0 z-20 h-20 border-b border-white/5 bg-zinc-950/40 backdrop-blur-xl flex items-center justify-between px-8 shrink-0 mb-6 rounded-b-[2rem] shadow-2xl shadow-black/40">
-        {/* Left: project name + repo */}
-        <div className="flex items-center gap-4 min-w-0">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500/20 to-purple-500/20 border border-indigo-500/20 flex items-center justify-center shrink-0">
-            <Github className="w-5 h-5 text-indigo-400" />
-          </div>
+      <div className="sticky top-0 z-20 h-20 border-b border-white/5 bg-[#08080c]/80 backdrop-blur-xl flex items-center justify-between px-8 shrink-0 mb-6 rounded-b-3xl shadow-2xl shadow-black/40">
+        <div className="flex items-center gap-5 min-w-0">
           <div className="min-w-0">
-            <h1 className="text-xl font-bold text-white truncate tracking-tight text-glow">{project.name}</h1>
+            <h1 className="text-lg font-bold text-white truncate tracking-tight">{project.name}</h1>
             {project.githubUrl ? (
               <a
                 href={project.githubUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 text-xs text-zinc-500 hover:text-indigo-400 font-mono transition-colors"
+                className="inline-flex items-center gap-1.5 text-[10px] text-zinc-500 hover:text-white font-mono transition-colors uppercase tracking-widest"
               >
                 {project.githubUrl.replace('https://github.com/', '')}
-                <ExternalLink className="w-3 h-3" />
+                <ExternalLink className="w-2.5 h-2.5" />
               </a>
             ) : (
-              <span className="text-xs text-zinc-600 font-medium italic">No repository linked</span>
+              <span className="text-[10px] text-zinc-600 font-bold uppercase tracking-widest">No source linked</span>
             )}
           </div>
         </div>
 
-        {/* Right: status pills */}
-        <div className="flex items-center gap-3 shrink-0">
-          <div className="flex -space-x-2 mr-2">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="w-7 h-7 rounded-full border-2 border-zinc-900 bg-zinc-800 flex items-center justify-center text-[10px] font-bold text-zinc-400">
-                {String.fromCharCode(64 + i)}
-              </div>
-            ))}
-          </div>
-          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 border border-white/10 text-xs text-zinc-300 font-bold">
-            <Users className="w-3.5 h-3.5 text-indigo-400" />
+        <div className="flex items-center gap-4 shrink-0">
+          <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-[10px] text-zinc-300 font-bold uppercase tracking-widest">
+            <Users className="w-3.5 h-3.5 text-zinc-500" />
             {teamMembersLoading ? '…' : teamMembers.length}
           </span>
-          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-400 font-bold">
-            <Bot className="w-3.5 h-3.5" />
-            AI Active
+          <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-[10px] text-zinc-400 font-bold uppercase tracking-widest">
+            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+            Active
           </span>
-          {project.githubUrl && (
-            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-500/10 border border-blue-500/20 text-xs text-blue-400 font-bold">
-              <span className="w-1.5 h-1.5 rounded-full bg-blue-400 shadow-[0_0_8px_rgba(96,165,250,0.8)]" />
-              Connected
-            </span>
-          )}
         </div>
       </div>
 
@@ -270,24 +252,24 @@ const DashboardPage = () => {
         <div className="flex-1 min-w-0 space-y-6">
 
           {/* Category Tabs */}
-          <div className="flex items-center gap-1 p-1 bg-white/[0.03] border border-white/5 rounded-2xl w-fit mb-4">
+          <div className="flex items-center gap-1 p-1 bg-white/[0.02] border border-white/5 rounded-xl w-fit mb-6">
             {[
-              { id: 'activity', label: 'Activity', icon: Github },
-              { id: 'ai', label: 'Intelligence', icon: Bot },
-              { id: 'team', label: 'Collaboration', icon: Users },
-              { id: 'sync', label: 'Maintenance', icon: RefreshCcw },
+              { id: 'activity', label: 'Stream', icon: Github },
+              { id: 'ai', label: 'Context', icon: Cpu },
+              { id: 'team', label: 'Team', icon: Users },
+              { id: 'sync', label: 'Sync', icon: RefreshCcw },
             ].map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as any)}
                 className={cn(
-                  "flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all duration-300",
+                  "flex items-center gap-2 px-5 py-2 rounded-lg text-[11px] font-bold uppercase tracking-wider transition-all duration-300",
                   activeTab === tab.id
-                    ? "bg-white/10 text-white shadow-lg shadow-black/20"
-                    : "text-zinc-500 hover:text-zinc-300 hover:bg-white/[0.02]"
+                    ? "bg-white text-[#08080c] shadow-xl"
+                    : "text-zinc-600 hover:text-zinc-400 hover:bg-white/[0.02]"
                 )}
               >
-                <tab.icon className={cn("w-3.5 h-3.5", activeTab === tab.id ? "text-indigo-400" : "text-zinc-600")} />
+                <tab.icon className="w-3.5 h-3.5" />
                 {tab.label}
               </button>
             ))}
@@ -315,12 +297,12 @@ const DashboardPage = () => {
                 <AICodeAssistantCard />
                 <div className="premium-glass rounded-3xl p-6 border border-white/5 shadow-2xl shadow-black/20">
                   <div className="flex items-center gap-3 mb-6">
-                    <div className="p-2.5 rounded-xl bg-indigo-500/10 border border-indigo-500/20">
-                      <BarChart3 className="w-5 h-5 text-indigo-400" />
+                    <div className="p-2.5 rounded-xl bg-white/5 border border-white/10">
+                      <BarChart3 className="w-5 h-5 text-zinc-400" />
                     </div>
                     <div>
-                      <h3 className="font-bold text-base text-white tracking-tight">Commit Intelligence</h3>
-                      <p className="text-[10px] text-zinc-500 uppercase tracking-widest font-black">AI Analysis & Metrics</p>
+                      <h3 className="font-bold text-base text-white tracking-tight">Change Analytics</h3>
+                      <p className="text-[10px] text-zinc-500 uppercase tracking-widest font-black">Contextual Metrics</p>
                     </div>
                   </div>
                   <CommitIntelligenceDashboard projectId={project.id} projectName={project.name} />
@@ -402,86 +384,80 @@ const DashboardPage = () => {
           {/* Project summary */}
           <div className="premium-glass rounded-3xl p-6 space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em]">Target Project</h3>
-              <Badge variant="outline" className="bg-indigo-500/10 border-indigo-500/20 text-indigo-400 text-[10px]">Live</Badge>
+              <h3 className="text-[10px] font-bold text-zinc-500 uppercase tracking-[0.2em] opacity-50">Active Project</h3>
+              <Badge variant="outline" className="bg-white/5 border-white/10 text-zinc-400 text-[10px]">STABLE</Badge>
             </div>
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shrink-0 shadow-lg shadow-indigo-500/20">
-                <Github className="w-6 h-6 text-white" />
+              <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center shrink-0">
+                <Github className="w-5 h-5 text-[#08080c]" />
               </div>
               <div className="min-w-0">
-                <p className="text-base font-bold text-white truncate text-glow">{project.name}</p>
+                <p className="text-sm font-bold text-white truncate">{project.name}</p>
                 {project.githubUrl && (
-                  <p className="text-xs text-zinc-500 font-mono truncate">
+                  <p className="text-[10px] text-zinc-500 font-mono truncate uppercase tracking-tighter">
                     {project.githubUrl.replace('https://github.com/', '')}
                   </p>
                 )}
               </div>
             </div>
             <div className="pt-2 grid grid-cols-2 gap-3">
-              <div className="rounded-2xl bg-white/5 border border-white/5 p-4 text-center group/card hover:bg-white/10 transition-colors">
-                <p className="text-2xl font-black text-white">{teamMembersLoading ? '—' : teamMembers.length}</p>
-                <p className="text-[10px] text-zinc-500 uppercase font-black tracking-widest">Members</p>
+              <div className="rounded-xl bg-white/[0.02] border border-white/5 p-4 text-center">
+                <p className="text-xl font-bold text-white">{teamMembersLoading ? '—' : teamMembers.length}</p>
+                <p className="text-[9px] text-zinc-600 uppercase font-black tracking-widest">Members</p>
               </div>
-              <div className="rounded-2xl bg-emerald-500/10 border border-emerald-500/20 p-4 text-center hover:bg-emerald-500/15 transition-colors">
-                <p className="text-2xl font-black text-emerald-400">AI</p>
-                <p className="text-[10px] text-emerald-400/80 uppercase font-black tracking-widest">Active</p>
+              <div className="rounded-xl bg-white/[0.02] border border-white/5 p-4 text-center">
+                <p className="text-xl font-bold text-zinc-400">Gen</p>
+                <p className="text-[9px] text-zinc-600 uppercase font-black tracking-widest">Active</p>
               </div>
             </div>
           </div>
 
           {/* AI & Repo status */}
-          <div className="premium-glass rounded-3xl p-6 space-y-4">
-            <h3 className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em]">Real-time Status</h3>
+          <div className="premium-glass rounded-2xl p-6 border border-white/5 shadow-2xl shadow-black/20 space-y-4">
+            <h3 className="text-[10px] font-bold text-zinc-500 uppercase tracking-[0.2em] opacity-50">Platform State</h3>
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-zinc-400 font-medium flex items-center gap-3">
-                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                  AI Analysis
+                <span className="text-[11px] text-zinc-400 font-bold uppercase tracking-wider flex items-center gap-3">
+                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+                  Semantic Context
                 </span>
-                <Badge variant="outline" className="border-emerald-500/30 text-emerald-400 font-black text-[10px]">ACTIVE</Badge>
+                <Badge variant="outline" className="border-white/10 text-zinc-500 font-black text-[9px] uppercase tracking-widest">Active</Badge>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-zinc-400 font-medium flex items-center gap-3">
-                  <span className={`w-2 h-2 rounded-full ${project.githubUrl ? 'bg-indigo-400' : 'bg-zinc-700'}`} />
-                  Data Sync
+                <span className="text-[11px] text-zinc-400 font-bold uppercase tracking-wider flex items-center gap-3">
+                  <div className={`w-1.5 h-1.5 rounded-full ${project.githubUrl ? 'bg-white shadow-[0_0_8px_rgba(255,255,255,0.3)]' : 'bg-zinc-700'}`} />
+                  Sync Protocol
                 </span>
-                <span className={`font-bold text-[11px] ${project.githubUrl ? 'text-indigo-400' : 'text-zinc-600'}`}>
-                  {project.githubUrl ? 'STABLE' : 'PENDING'}
+                <span className={`font-black text-[9px] uppercase tracking-widest ${project.githubUrl ? 'text-zinc-300' : 'text-zinc-600'}`}>
+                  {project.githubUrl ? 'Connected' : 'Pending'}
                 </span>
               </div>
             </div>
           </div>
 
           {/* Quick actions */}
-          <div className="premium-glass rounded-3xl p-6 space-y-4">
-            <h3 className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em]">Actions</h3>
+          <div className="premium-glass rounded-2xl p-6 border border-white/5 shadow-2xl shadow-black/20 space-y-5">
+            <h3 className="text-[10px] font-bold text-zinc-500 uppercase tracking-[0.2em] opacity-50">Project Actions</h3>
             <div className="grid gap-2">
-              <button
-                onClick={inviteTeamMember}
-                className="w-full flex items-center justify-between px-4 py-3 rounded-2xl bg-white/5 border border-white/5 hover:bg-indigo-500/10 hover:border-indigo-500/20 transition-all text-left group"
-              >
-                <div className="flex items-center gap-3">
-                  <UserPlus className="w-4 h-4 text-zinc-400 group-hover:text-indigo-400 transition-colors" />
-                  <span className="text-sm font-bold text-zinc-300 group-hover:text-white transition-colors">Invite Member</span>
-                </div>
-                <ChevronRight className="w-3.5 h-3.5 text-zinc-600 group-hover:text-indigo-400 transition-colors" />
-              </button>
-              <button
-                onClick={exportData}
-                className="w-full flex items-center justify-between px-4 py-3 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 transition-all text-left group"
-              >
-                <div className="flex items-center gap-3">
-                  <Download className="w-4 h-4 text-zinc-400 group-hover:text-zinc-200" />
-                  <span className="text-sm font-bold text-zinc-300 group-hover:text-white">Export Data</span>
-                </div>
-                <ChevronRight className="w-3.5 h-3.5 text-zinc-600" />
-              </button>
+              {[
+                { label: 'Invite Member', icon: UserPlus, action: inviteTeamMember },
+                { label: 'Export Dataset', icon: Download, action: exportData },
+              ].map(item => (
+                <button
+                  key={item.label}
+                  onClick={item.action}
+                  className="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-white/[0.02] border border-white/5 hover:bg-white/5 transition-all group"
+                >
+                  <div className="flex items-center gap-3">
+                    <item.icon className="w-3.5 h-3.5 text-zinc-500 group-hover:text-white transition-colors" />
+                    <span className="text-[11px] font-bold text-zinc-400 group-hover:text-white transition-colors uppercase tracking-wider">{item.label}</span>
+                  </div>
+                </button>
+              ))}
               <button
                 onClick={archiveProject}
-                className="w-full flex items-center gap-2.5 px-4 py-3 text-left text-zinc-500 hover:text-red-400 transition-colors mt-2 text-xs font-bold uppercase tracking-widest pl-5"
+                className="w-full flex items-center justify-center gap-2.5 px-4 py-4 text-zinc-600 hover:text-zinc-400 transition-colors mt-2 text-[10px] font-bold uppercase tracking-[0.15em]"
               >
-                <Archive className="w-3.5 h-3.5" />
                 Archive Project
               </button>
             </div>

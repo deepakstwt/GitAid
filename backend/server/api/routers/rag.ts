@@ -86,12 +86,24 @@ export const ragRouter = createTRPCRouter({
       githubUrl: z.string().url(),
       githubToken: z.string().optional(),
     }))
-    .mutation(async ({ input }) => {
-      return await indexGithubRepo(
-        input.projectId,
-        input.githubUrl,
-        input.githubToken
-      );
+    .mutation(async ({ input, ctx }) => {
+      let token = input.githubToken;
+      if (!token) {
+        const project = await ctx.db.project.findFirst({
+          where: { id: input.projectId, UserToProjects: { some: { userId: ctx.userId } }, deletedAt: null },
+          select: { githubToken: true },
+        });
+        token = project?.githubToken ?? undefined;
+        if (!token) {
+          try {
+            const { env } = await import("@/server/config/env");
+            token = env.GITHUB_TOKEN ?? undefined;
+          } catch {
+            // ignore
+          }
+        }
+      }
+      return await indexGithubRepo(input.projectId, input.githubUrl, token);
     }),
 
   /**
@@ -199,16 +211,20 @@ export const ragRouter = createTRPCRouter({
       projectId: z.string(),
     }))
     .query(async ({ input, ctx }) => {
-      const totalEmbeddings = await ctx.db.sourceCodeEmbedding.count({
+      const totalRows = await ctx.db.sourceCodeEmbedding.count({
         where: { projectId: input.projectId },
       });
 
-      const embeddingsWithVectors = await ctx.db.$queryRaw<Array<{ count: number }>>`
+      // Count only rows that actually HAVE a vector embedding (non-NULL).
+      // This is the only number that matters for RAG — NULL-embedding rows
+      // are ghost rows from a failed indexing run and cannot be queried.
+      const withVectorsResult = await ctx.db.$queryRaw<Array<{ count: bigint }>>`
         SELECT COUNT(*) as count
         FROM "SourceCodeEmbedding"
         WHERE "projectId" = ${input.projectId}
           AND embedding IS NOT NULL;
       `;
+      const filesWithEmbeddings = Number(withVectorsResult[0]?.count ?? 0);
 
       const sampleFiles = await ctx.db.sourceCodeEmbedding.findMany({
         where: { projectId: input.projectId },
@@ -222,8 +238,11 @@ export const ragRouter = createTRPCRouter({
       });
 
       return {
-        totalFiles: totalEmbeddings,
-        filesWithEmbeddings: embeddingsWithVectors[0]?.count || 0,
+        // totalFiles = rows with actual embeddings (the only ones useful for search)
+        totalFiles: filesWithEmbeddings,
+        // ghostRows = rows created but never embedded (from a previously failed indexing)
+        ghostRows: totalRows - filesWithEmbeddings,
+        filesWithEmbeddings,
         recentFiles: sampleFiles,
       };
     }),

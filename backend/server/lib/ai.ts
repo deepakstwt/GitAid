@@ -1,27 +1,56 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import path from 'path';
+
+// Eagerly load backend/.env so GEMINI_API_KEY is in process.env before any
+// lazy import('./env') runs. dotenv.config() is synchronous and idempotent.
+// This matters because env.js uses top-level await (async) – it may not have
+// finished by the time the first AI call arrives.
+try {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const dotenv = require('dotenv') as typeof import('dotenv');
+  const cwd = process.cwd();
+  // Works whether we run from frontend/ or repo root
+  dotenv.config({ path: path.join(cwd, '..', 'backend', '.env'), override: false });
+  dotenv.config({ path: path.join(cwd, 'backend', '.env'), override: false });
+} catch {
+  // dotenv not available – env vars must already be set externally
+}
+
+let _keyLogged = false;
 
 export async function getGeminiClient(): Promise<GoogleGenerativeAI> {
-  try {
-    const { env } = await import('@/server/config/env');
-    if (!env.GEMINI_API_KEY) {
-      throw new Error('GEMINI_API_KEY environment variable is not set');
+  // Prefer process.env so we use whatever was loaded by dotenv (e.g. backend/.env)
+  let apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    try {
+      const { env } = await import('@/server/config/env');
+      apiKey = env.GEMINI_API_KEY;
+    } catch (e) {
+      // ignore
     }
-    return new GoogleGenerativeAI(env.GEMINI_API_KEY);
-  } catch (envError) {
-    console.error('Error loading environment:', envError);
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) {
-      throw new Error('GEMINI_API_KEY environment variable is not set (fallback check)');
-    }
-    return new GoogleGenerativeAI(apiKey);
   }
+  if (!apiKey || apiKey.trim() === '') {
+    throw new Error('GEMINI_API_KEY is not set. Add it to backend/.env (get a key at https://aistudio.google.com/app/apikey)');
+  }
+  if (!_keyLogged) {
+    _keyLogged = true;
+    console.log('[Gemini] Using API key:', apiKey.substring(0, 6) + '...' + apiKey.slice(-4));
+  }
+  return new GoogleGenerativeAI(apiKey.trim());
 }
-export async function summarizeText(text: string): Promise<string> {
-  try {
-    const genAI = await getGeminiClient();
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-    const prompt = `Analyze this Git commit and provide a concise, helpful summary. Focus on:
+// Model IDs that exist for your API (we use 2.x; 1.5-flash is not available for all keys)
+const GEMINI_MODELS = ['gemini-2.0-flash', 'gemini-2.0-flash-001', 'gemini-2.0-flash-lite', 'gemini-2.5-flash'] as const;
+
+export async function summarizeText(text: string, retryCount = 0): Promise<string> {
+  const MAX_RETRIES = 3;
+  const trimmed = (text || '').trim();
+  if (!trimmed) {
+    console.warn('summarizeText called with empty text, using fallback');
+    return generateFallbackSummary('(No commit data provided)');
+  }
+
+  const prompt = `Analyze this Git commit and provide a concise, helpful summary. Focus on:
 1. What type of change this is (feature, bugfix, refactor, etc.)
 2. The main purpose and impact of the changes
 3. Any important technical details
@@ -29,21 +58,63 @@ export async function summarizeText(text: string): Promise<string> {
 Keep the summary under 150 words and use a professional, informative tone.
 
 Commit data:
-${text}`;
+${trimmed}`;
 
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const summary = response.text().trim();
+  for (const modelId of GEMINI_MODELS) {
+    try {
+      const genAI = await getGeminiClient();
+      const model = genAI.getGenerativeModel({ model: modelId });
 
-    if (summary.length > 500) {
-      return summary.substring(0, 497) + '...';
+      const result = await model.generateContent(prompt);
+      const response = result.response;
+      let summary: string;
+      try {
+        summary = response.text().trim();
+      } catch (textErr: any) {
+        console.warn(`Gemini (${modelId}) response.text() failed:`, textErr?.message || textErr);
+        continue;
+      }
+      if (!summary) continue;
+      return summary;
+    } catch (error: any) {
+      const errMsg = error?.message || String(error);
+      const status = error?.status ?? error?.response?.status;
+      const isRateLimit = status === 429 || errMsg.includes('429');
+      const isModelError =
+        status === 404 ||
+        errMsg.includes('404') ||
+        errMsg.includes('not found') ||
+        errMsg.includes('model') ||
+        errMsg.includes('MODEL_NOT_FOUND');
+
+      // Log exact error so you can fix it (check terminal when you click "Poll Commits")
+      console.error(`[Gemini] ${modelId} failed (status=${status}):`, errMsg);
+
+      if (isRateLimit && retryCount < MAX_RETRIES) {
+        const delay = Math.pow(2, retryCount) * 1000;
+        console.warn(`⚠️ Rate limited. Retrying in ${delay}ms... (${retryCount + 1}/${MAX_RETRIES})`);
+        await new Promise((r) => setTimeout(r, delay));
+        return summarizeText(text, retryCount + 1);
+      }
+
+      if (isModelError) {
+        continue;
+      }
+
+      // 400/403 = bad key or permission – stop trying models and show clear message
+      if (status === 400 || status === 403 || errMsg.includes('API key') || errMsg.includes('invalid') || errMsg.includes('PERMISSION')) {
+        console.error(
+          '🔴 Gemini API key rejected. Fix: 1) Get a new key at https://aistudio.google.com/app/apikey 2) Put GEMINI_API_KEY=your_key in backend/.env 3) Restart dev server.'
+        );
+        return generateFallbackSummary(trimmed);
+      }
+
+      return generateFallbackSummary(trimmed);
     }
-
-    return summary;
-  } catch (error) {
-    console.error('Error generating AI summary:', error);
-    return generateFallbackSummary(text);
   }
+
+  console.error('🔴 All Gemini models failed. Check the errors above. Using fallback.');
+  return generateFallbackSummary(trimmed);
 }
 
 function generateFallbackSummary(text: string): string {

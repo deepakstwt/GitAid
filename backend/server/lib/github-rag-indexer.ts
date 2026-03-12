@@ -19,10 +19,17 @@ export async function indexGithubRepo(
   processedCount: number;
   skippedCount: number;
   errors: string[];
+  message?: string;
 }> {
   console.log(`Starting GitHub RAG indexing for: ${githubUrl}`);
   
-  const results = {
+  const results: {
+    success: boolean;
+    processedCount: number;
+    skippedCount: number;
+    errors: string[];
+    message?: string;
+  } = {
     success: false,
     processedCount: 0,
     skippedCount: 0,
@@ -33,45 +40,73 @@ export async function indexGithubRepo(
     const docs = await loadGitHubRepository(githubUrl, githubToken);
 
     if (docs.length === 0) {
-      console.warn('No documents found in repository');
-      return { ...results, success: true };
+      console.warn('No documents found in repository. Private repo? Pass a GitHub token (project settings or env).');
+      return {
+        ...results,
+        success: true,
+        message: 'No files were loaded from the repo. If it’s private, add a GitHub token in project settings.',
+      };
     }
+
+    // Clear existing rows (including ghost rows with NULL embeddings from previous failed runs)
+    // before re-indexing. Without this, the @@unique([projectId, fileName]) constraint
+    // would throw on every re-index attempt.
+    console.log('🗑️ Clearing existing embeddings for project before re-indexing...');
+    await db.sourceCodeEmbedding.deleteMany({ where: { projectId } });
+    console.log('✅ Cleared existing embeddings.');
 
     // Step 2: Filter relevant files
     const relevantDocs = filterRelevantDocuments(docs);
     console.log(`Processing ${relevantDocs.length} relevant files (skipped ${docs.length - relevantDocs.length})`);
     results.skippedCount = docs.length - relevantDocs.length;
 
-    // Step 3: Process each document
-    const processPromises = relevantDocs.map(async (doc, index) => {
-      const fileName = extractFileName(doc);
-        console.log(`Processing file ${index + 1}/${relevantDocs.length}: ${fileName}`);
-      
-      try {
-        const summary = await summarizeCode(doc);
-        const embedding = await generateEmbedding(summary);
+    // Step 3: Process documents in small batches to avoid Gemini rate limits.
+    // Processing all files in parallel would fire 100+ API calls at once on the free tier.
+    const BATCH_SIZE = 3;
+    const allProcessResults: Array<{ success: true; fileName: string; filePath: string; summary: string; embedding: number[]; sourceCode: string } | { success: false; fileName: string; error: string }> = [];
 
-        return {
-          success: true,
-          fileName,
-          filePath: doc.metadata?.source || fileName,
-          summary,
-          embedding,
-          sourceCode: doc.pageContent || ''
-        };
-      } catch (error) {
-        console.error(`❌ Error processing ${fileName}:`, error);
-        return {
-          success: false,
-          fileName,
-          error: error instanceof Error ? error.message : 'Unknown error'
-        };
+    for (let batchStart = 0; batchStart < relevantDocs.length; batchStart += BATCH_SIZE) {
+      const batch = relevantDocs.slice(batchStart, batchStart + BATCH_SIZE);
+      console.log(`⏳ Processing batch ${Math.floor(batchStart / BATCH_SIZE) + 1}/${Math.ceil(relevantDocs.length / BATCH_SIZE)} (files ${batchStart + 1}–${Math.min(batchStart + BATCH_SIZE, relevantDocs.length)})`);
+
+      const batchResults = await Promise.allSettled(
+        batch.map(async (doc, i) => {
+          const fileName = extractFileName(doc);
+          console.log(`  Processing file ${batchStart + i + 1}/${relevantDocs.length}: ${fileName}`);
+          try {
+            const summary = await summarizeCode(doc);
+            const embedding = await generateEmbedding(summary);
+            return {
+              success: true as const,
+              fileName,
+              filePath: doc.metadata?.source || fileName,
+              summary,
+              embedding,
+              sourceCode: doc.pageContent || ''
+            };
+          } catch (error) {
+            console.error(`❌ Error processing ${fileName}:`, error);
+            return {
+              success: false as const,
+              fileName,
+              error: error instanceof Error ? error.message : 'Unknown error'
+            };
+          }
+        })
+      );
+
+      for (const r of batchResults) {
+        if (r.status === 'fulfilled') allProcessResults.push(r.value);
+        else allProcessResults.push({ success: false, fileName: 'unknown', error: String(r.reason) });
       }
-    });
 
-    // Step 4: Wait for all processing to complete
-    console.log('⏳ Waiting for all documents to be processed...');
-    const processResults = await Promise.allSettled(processPromises);
+      // Small delay between batches to respect rate limits
+      if (batchStart + BATCH_SIZE < relevantDocs.length) {
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+    }
+
+    const processResults = allProcessResults;
 
     // Step 5: Store in database
     console.log('💾 Storing results in database...');
@@ -82,8 +117,8 @@ export async function indexGithubRepo(
       
       if (!result) continue;
       
-      if (result.status === 'fulfilled' && result.value.success) {
-        const { fileName, filePath, summary, embedding, sourceCode } = result.value;
+      if (result.success) {
+        const { fileName, filePath, summary, embedding, sourceCode } = result;
         
         // Ensure all required fields are present
         if (!summary || !sourceCode) {
@@ -103,12 +138,15 @@ export async function indexGithubRepo(
             }
           });
 
-          // Then, update with the vector embedding using raw SQL
-          await db.$executeRaw`
-            UPDATE "SourceCodeEmbedding"
-            SET embedding = ${embedding as any}::vector
-            WHERE id = ${record.id};
-          `;
+          // Use $executeRawUnsafe to inline the vector literal directly in SQL.
+          // Prisma's $executeRaw (tagged template) cannot serialize a number[] as a
+          // native `vector` type – it throws "Couldn't serialize value".
+          // The record.id is still parameterized ($1) so there is no SQL injection risk.
+          const vectorStr = '[' + embedding.join(',') + ']';
+          await db.$executeRawUnsafe(
+            `UPDATE "SourceCodeEmbedding" SET embedding = '${vectorStr}'::vector WHERE id = $1`,
+            record.id
+          );
 
           console.log(`Stored embedding for: ${fileName}`);
           successCount++;
@@ -116,15 +154,20 @@ export async function indexGithubRepo(
           console.error(`Database error for ${fileName}:`, dbError);
           results.errors.push(`Database error for ${fileName}: ${dbError instanceof Error ? dbError.message : 'Unknown error'}`);
         }
-      } else if (result.status === 'fulfilled' && !result.value.success) {
-        results.errors.push(`Processing error for ${result.value.fileName}: ${result.value.error}`);
-      } else if (result.status === 'rejected') {
-        results.errors.push(`Promise rejected: ${result.reason}`);
+      } else {
+        results.errors.push(`Processing error for ${result.fileName}: ${result.error}`);
       }
     }
 
     results.processedCount = successCount;
     results.success = true;
+    if (successCount === 0 && results.errors.length > 0) {
+      results.message = results.errors[0] ?? 'No files could be indexed. Check server logs.';
+    } else if (successCount === 0 && relevantDocs.length === 0) {
+      results.message = 'No code files matched (wrong extensions or all filtered out).';
+    } else if (successCount === 0) {
+      results.message = 'All files failed to process. For private repos, add a GitHub token in project settings.';
+    }
 
     console.log(`GitHub RAG indexing completed`);
     console.log(`Results: ${successCount} processed, ${results.skippedCount} skipped, ${results.errors.length} errors`);
@@ -208,7 +251,10 @@ function filterRelevantDocuments(docs: Document[]): Document[] {
  */
 function extractFileName(doc: Document): string {
   const source = doc.metadata?.source || 'unknown_file';
-  return source.split('/').pop() || source;
+  // Return the full relative path (e.g. "src/lib/utils.ts") to avoid
+  // @@unique([projectId, fileName]) collisions when two files in different
+  // directories share the same basename.
+  return source;
 }
 
 /**
@@ -236,27 +282,31 @@ export async function queryRAGSystem(
   try {
     // Step 1: Generate embedding for the question
     const questionEmbedding = await generateEmbedding(question);
-    
-    // Step 2: Find similar documents using PGVector cosine similarity
-    const similarDocs = await db.$queryRaw`
-      SELECT 
-        "fileName",
-        "summary",
-        "source" as "sourceCode",
-        1 - (embedding <=> ${questionEmbedding as any}::vector) as similarity
-      FROM "SourceCodeEmbedding"
-      WHERE "projectId" = ${projectId}
-        AND embedding IS NOT NULL
-      ORDER BY embedding <=> ${questionEmbedding as any}::vector
-      LIMIT ${topK};
-    ` as Array<{
-      fileName: string;
-      summary: string;
-      sourceCode: string;
-      similarity: number;
-    }>;
+    // Inline vector in SQL: Prisma cannot serialize vector as a bound param (error: "Couldn't serialize value")
+    const vectorStr = '[' + questionEmbedding.join(',') + ']';
+
+    // Step 2: Find similar documents using PGVector (vector inlined; only projectId and topK are bound)
+    const similarDocs = await db.$queryRawUnsafe<
+      Array<{ fileName: string; summary: string; sourceCode: string; similarity: number }>
+    >(
+      `SELECT "fileName", "summary", "source" as "sourceCode",
+        1 - (embedding <=> '${vectorStr}'::vector) as similarity
+       FROM "SourceCodeEmbedding"
+       WHERE "projectId" = $1 AND embedding IS NOT NULL
+       ORDER BY embedding <=> '${vectorStr}'::vector
+       LIMIT $2`,
+      projectId,
+      topK
+    );
 
     console.log(`Found ${similarDocs.length} similar documents`);
+
+    if (similarDocs.length === 0) {
+      return {
+        answer: 'No relevant files found for this question. Try re-indexing the repository (INITIALIZE CONTEXT) or asking a different question.',
+        sources: []
+      };
+    }
 
     // Step 3: Generate answer using retrieved context
     const { generateRAGAnswer } = await import('./embeddings');
@@ -267,10 +317,11 @@ export async function queryRAGSystem(
       answer,
       sources: similarDocs
     };
-  } catch (error) {
+  } catch (error: any) {
     console.error('❌ Error querying RAG system:', error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
     return {
-      answer: 'I apologize, but I encountered an error while searching for information about your question.',
+      answer: `Technical Protocol Exception: ${errorMessage}. This usually indicates a synchronization mismatch in the Semantic Context layer. Please ensure the repository is indexed.`,
       sources: []
     };
   }

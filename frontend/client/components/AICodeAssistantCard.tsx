@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
-import { Send, Bot, User, Loader2, Sparkles, Brain, Search, Info, RotateCw } from "lucide-react";
+import { Send, Cpu, User, Loader2, Sparkles, Brain, Search, Info, RotateCw } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { api } from "@/trpc/react";
 import useProject from "@/hooks/use-project";
@@ -43,8 +43,20 @@ export function AICodeAssistantCard() {
   });
 
   const indexMutation = api.rag.indexGithubRepository.useMutation({
-    onSuccess: (data) => {
-      toast.success(`Successfully indexed ${data.processedCount} files! AI is now ready.`);
+    onSuccess: async (data) => {
+      if (data.processedCount > 0) {
+        toast.success(`Successfully indexed ${data.processedCount} files! AI is now ready.`);
+        await utils.rag.getPGVectorStats.invalidate({ projectId: projectId || '' });
+      } else if (data.errors && data.errors.length > 0) {
+        toast.error(`Indexing failed: ${data.errors[0]}. Check the server logs for details.`);
+      } else {
+        const hint = (data as { message?: string }).message;
+        toast.warning(
+          hint ??
+            '0 files were indexed. If this is a private repository, add a GitHub Personal Access Token in the Sync tab (project settings). Also verify the GitHub URL is correct.',
+          { duration: 8000 }
+        );
+      }
     },
     onError: (error) => {
       toast.error("Indexing failed: " + error.message);
@@ -82,51 +94,50 @@ export function AICodeAssistantCard() {
 
   const handleIndex = () => {
     if (!projectId || !project?.githubUrl) {
-      toast.error("Project must have a GitHub URL to index");
+      toast.error("Project must have a GitHub URL to index. Add one in project Settings (Sync tab).");
       return;
     }
     indexMutation.mutate({
       projectId,
-      githubUrl: project.githubUrl
+      githubUrl: project.githubUrl,
+      githubToken: project.githubToken ?? undefined,
     });
   };
 
   return (
-    <Card className="col-span-3 flex flex-col h-[600px] relative overflow-hidden bg-[#0A0A0B] border border-white/5 shadow-[0_24px_48px_-12px_rgba(0,0,0,0.5)] rounded-[2.5rem]">
+    <Card className="col-span-3 flex flex-col h-[calc(100vh-8rem)] min-h-[650px] max-h-[900px] relative overflow-hidden bg-[#0A0A0B] border border-white/5 shadow-[0_24px_48px_-12px_rgba(0,0,0,0.5)] rounded-[2.5rem]">
       {/* Dynamic Background Elements */}
       <div className="absolute inset-0 bg-grid-white/[0.01] -z-1 opacity-20" />
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[40%] bg-gradient-to-b from-indigo-500/10 via-transparent to-transparent blur-[120px]" />
       <div className="absolute -bottom-24 -right-24 w-80 h-80 bg-purple-500/10 blur-[120px] rounded-full opacity-40" />
       <div className="absolute -top-24 -left-24 w-80 h-80 bg-blue-500/10 blur-[120px] rounded-full opacity-40" />
 
-      {/* Premium Header */}
+      {/* Technical Header */}
       <CardHeader className="flex flex-row items-center justify-between space-y-0 p-6 pb-4 border-white/5 relative z-10 bg-zinc-950/20 backdrop-blur-xl rounded-t-[2.5rem]">
         <div className="flex items-center gap-4">
-          <div className="relative group/brain">
-            <div className="absolute -inset-1 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-xl blur opacity-25 group-hover/brain:opacity-40 transition duration-1000 group-hover/brain:duration-200" />
+          <div className="relative">
             <div className="relative p-2.5 rounded-xl bg-zinc-900 border border-white/10 shadow-xl">
-              <Brain className="w-5 h-5 text-indigo-400" />
+              <Cpu className="w-5 h-5 text-zinc-400" />
             </div>
           </div>
           <div>
             <CardTitle className="text-lg font-bold text-white tracking-tight flex items-center gap-2">
-              GitAid Assistant
-              <Badge className="bg-indigo-500/10 text-indigo-400 border-indigo-500/20 text-[9px] font-black tracking-widest px-2 py-0.5 pointer-events-none">
-                PRO ACTIVE
+              Repository Context
+              <Badge className="bg-white/5 text-zinc-400 border-white/10 text-[9px] font-black tracking-widest px-2 py-0.5 pointer-events-none">
+                PLATFORM CORE
               </Badge>
             </CardTitle>
-            <CardDescription className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 mt-0.5">
-              Code Intelligence Protocol
+            <CardDescription className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-600 mt-0.5">
+              Semantic Query Protocol
             </CardDescription>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
           {isIndexed ? (
-            <div className="relative group/status cursor-default">
-              <div className="absolute -inset-1 bg-emerald-500/20 rounded-full blur-sm opacity-0 group-hover/status:opacity-100 transition-opacity" />
-              <Badge variant="outline" className="relative bg-emerald-500/5 border-emerald-500/20 text-emerald-400 text-[10px] font-black flex gap-2 py-1.5 px-3 rounded-full overflow-hidden">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.8)]" />
+            <div className="relative cursor-default">
+              <Badge variant="outline" className="relative bg-white/5 border-white/10 text-zinc-400 text-[10px] font-black flex gap-2 py-1.5 px-3 rounded-full overflow-hidden">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(52,211,153,0.5)]" />
                 INDEXED: {stats?.totalFiles || 0} FILES
               </Badge>
             </div>
@@ -136,52 +147,68 @@ export function AICodeAssistantCard() {
               size="sm"
               onClick={handleIndex}
               disabled={indexMutation.isPending}
-              className="h-9 px-4 bg-indigo-500/10 border-indigo-500/20 text-indigo-400 hover:bg-indigo-500/20 text-[10px] font-black rounded-xl transition-all active:scale-95"
+              className="h-9 px-4 bg-white/5 border-white/10 text-white hover:bg-white/10 text-[10px] font-black rounded-xl transition-all active:scale-95"
             >
-              {indexMutation.isPending ? <RotateCw className="w-3.5 h-3.5 mr-2 animate-spin" /> : <Sparkles className="w-3.5 h-3.5 mr-2 text-indigo-400" />}
-              INITIALIZE AI INDEX
+              {indexMutation.isPending ? <RotateCw className="w-3.5 h-3.5 mr-2 animate-spin" /> : <Sparkles className="w-3.5 h-3.5 mr-2 text-zinc-400" />}
+              INITIALIZE CONTEXT
             </Button>
           )}
         </div>
       </CardHeader>
 
-      <CardContent className="flex-1 flex flex-col p-0 relative overflow-hidden">
+      <CardContent className="flex-1 min-h-0 flex flex-col p-0 relative overflow-hidden">
         {/* Messages display */}
-        <ScrollArea className="flex-1 p-8" ref={scrollRef}>
-          <div className="space-y-8">
+        <ScrollArea className="flex-1 min-h-0 overflow-hidden" ref={scrollRef}>
+          <div className="p-8 pb-12 space-y-8">
             {messages.length === 0 && (
-              <div className="flex flex-col items-center justify-center py-12 text-center space-y-8">
+              <div className="flex flex-col items-center justify-start mt-6 mb-8 text-center space-y-8">
                 <div className="relative">
-                  {/* Outer Glow */}
-                  <div className="absolute -inset-4 bg-gradient-to-r from-blue-500/10 via-indigo-500/20 to-purple-500/10 rounded-full blur-2xl animate-pulse" />
-                  <div className="relative w-20 h-20 rounded-3xl bg-zinc-900 border border-white/10 flex items-center justify-center shadow-2xl overflow-hidden group/bot">
-                    <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/10 to-transparent opacity-0 group-hover/bot:opacity-100 transition-opacity" />
-                    <Bot className="w-10 h-10 text-indigo-500 drop-shadow-[0_0_15px_rgba(99,102,241,0.5)]" />
+                  <div className="relative w-20 h-20 rounded-2xl bg-zinc-900/80 backdrop-blur-xl border border-white/10 flex items-center justify-center shadow-2xl overflow-hidden group/bot cursor-default">
+                    <Cpu className="w-10 h-10 text-zinc-500 group-hover/bot:scale-110 transition-transform duration-500" />
                   </div>
                 </div>
 
-                <div className="space-y-3 relative z-10">
-                  <h3 className="text-xl font-bold text-white tracking-tight">How can I assist your engineering today?</h3>
-                  <p className="text-sm text-zinc-500 max-w-[320px] leading-relaxed mx-auto font-medium">
-                    Query your architecture, debug complex logic, or analyze security patterns across your indexed files.
+                <div className="space-y-3 relative z-10 max-w-lg mx-auto">
+                  <h3 className="text-2xl font-black text-white tracking-tight">Semantic Repository Query</h3>
+                  <p className="text-[13px] text-zinc-500 max-w-[360px] leading-relaxed mx-auto font-medium">
+                    Query project architecture, debug application logic, or analyze patterns across indexed technical debt.
                   </p>
                 </div>
 
-                {/* Intelligent Starter Suggestions */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full max-w-md mt-4">
+                {/* Intelligent Starter Suggestions – one click runs the query */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full max-w-lg mt-12 pb-8">
                   {[
-                    { text: "Explain the project architecture", icon: Search },
-                    { text: "Find security vulnerabilities", icon: Sparkles },
-                    { text: "List core business logic files", icon: Brain },
-                    { text: "How is database schema handled?", icon: Brain }
+                    { text: "Explain terminal project architecture", icon: Search },
+                    { text: "List core business logic routines", icon: Brain },
+                    { text: "Trace middleware processing flow", icon: Cpu }
                   ].map((suggestion, idx) => (
                     <button
                       key={idx}
-                      onClick={() => setQuestion(suggestion.text)}
-                      className="flex items-center gap-3 p-3.5 bg-white/[0.03] hover:bg-white/[0.08] border border-white/5 rounded-2xl text-left text-xs font-bold text-zinc-400 hover:text-white transition-all duration-300 active:scale-95 group/sug"
+                      type="button"
+                      onClick={() => {
+                        if (!projectId || queryMutation.isPending) return;
+                        if (!isIndexed) {
+                          toast.warning(
+                            'Repository not indexed yet. Click "INITIALIZE CONTEXT" above to index your codebase first.',
+                            { duration: 5000 }
+                          );
+                          return;
+                        }
+                        const q = suggestion.text;
+                        setMessages(prev => [...prev, { role: 'user', content: q }]);
+                        setQuestion('');
+                        queryMutation.mutate({ projectId, question: q, topK: 5 });
+                      }}
+                      disabled={!projectId || queryMutation.isPending}
+                      className="group/sug relative overflow-hidden flex items-center gap-3.5 p-4 bg-zinc-900/40 backdrop-blur-md hover:bg-zinc-800/80 border border-white/5 hover:border-indigo-500/30 rounded-2xl text-left transition-all duration-300 active:scale-[0.98] shadow-lg hover:shadow-indigo-500/10 disabled:opacity-50 disabled:pointer-events-none"
                     >
-                      <suggestion.icon className="w-4 h-4 text-zinc-600 group-hover/sug:text-indigo-400 transition-colors" />
-                      {suggestion.text}
+                      <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/0 via-indigo-500/0 to-indigo-500/0 group-hover/sug:from-indigo-500/5 group-hover/sug:to-transparent transition-all duration-500" />
+                      <div className="w-8 h-8 rounded-xl bg-white/5 border border-white/5 flex items-center justify-center shrink-0 group-hover/sug:border-indigo-500/30 group-hover/sug:bg-indigo-500/10 transition-colors">
+                        <suggestion.icon className="w-4 h-4 text-zinc-500 group-hover/sug:text-indigo-400 transition-colors" />
+                      </div>
+                      <span className="text-[13px] font-bold text-zinc-400 group-hover/sug:text-zinc-200 transition-colors tracking-tight truncate pr-2">
+                        {suggestion.text}
+                      </span>
                     </button>
                   ))}
                 </div>
@@ -204,15 +231,15 @@ export function AICodeAssistantCard() {
                     msg.role === 'user' ? "flex-row-reverse" : "flex-row"
                   )}>
                     <div className={cn(
-                      "w-7 h-7 rounded-xl flex items-center justify-center border shadow-lg",
+                      "w-7 h-7 rounded-lg flex items-center justify-center border shadow-lg",
                       msg.role === 'user'
                         ? "bg-zinc-800 border-white/10"
-                        : "bg-gradient-to-br from-indigo-500/20 to-purple-500/20 border-indigo-500/30"
+                        : "bg-white text-[#08080c] border-white/10"
                     )}>
-                      {msg.role === 'user' ? <User className="w-3.5 h-3.5 text-zinc-400" /> : <Bot className="w-3.5 h-3.5 text-indigo-400" />}
+                      {msg.role === 'user' ? <User className="w-3.5 h-3.5 text-zinc-400" /> : <Cpu className="w-3.5 h-3.5" />}
                     </div>
                     <span className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-600">
-                      {msg.role === 'user' ? 'Engineering' : 'GitAid Intelligence'}
+                      {msg.role === 'user' ? 'Engineering' : 'Platform Context'}
                     </span>
                   </div>
 
@@ -249,17 +276,16 @@ export function AICodeAssistantCard() {
             {queryMutation.isPending && (
               <div className="mr-auto max-w-[88%] flex flex-col gap-3">
                 <div className="flex items-center gap-2.5">
-                  <div className="w-7 h-7 rounded-xl bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center shadow-lg">
-                    <Bot className="w-3.5 h-3.5 text-indigo-400" />
+                  <div className="w-7 h-7 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center shadow-lg">
+                    <Cpu className="w-3.5 h-3.5 text-zinc-400" />
                   </div>
-                  <span className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-600">GitAid Intelligence</span>
+                  <span className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-600">Platform Context</span>
                 </div>
                 <div className="p-5 rounded-[1.5rem] rounded-tl-none bg-[#141416] border border-white/5 flex items-center gap-4 group/loading shadow-2xl">
                   <div className="relative">
-                    <Loader2 className="w-4 h-4 text-indigo-500 animate-spin" />
-                    <div className="absolute inset-0 text-indigo-500/30 blur-sm animate-pulse" />
+                    <Loader2 className="w-4 h-4 text-zinc-500 animate-spin" />
                   </div>
-                  <span className="text-xs text-zinc-400 animate-pulse font-bold uppercase tracking-widest">Synthesizing codebase logic...</span>
+                  <span className="text-xs text-zinc-600 animate-pulse font-bold uppercase tracking-widest">Parsing technical context...</span>
                 </div>
               </div>
             )}
@@ -267,7 +293,7 @@ export function AICodeAssistantCard() {
         </ScrollArea>
 
         {/* Improved Input Area */}
-        <div className="p-8 pt-4 bg-gradient-to-t from-zinc-950 via-zinc-950 to-transparent relative z-10">
+        <div className="shrink-0 p-8 pt-4 bg-gradient-to-t from-zinc-950 via-zinc-950 to-transparent relative z-10">
           <form onSubmit={handleSubmit} className="relative group/input-row">
             {/* Input Glow */}
             <div className="absolute -inset-1 bg-gradient-to-r from-indigo-500/20 to-purple-500/20 rounded-[2rem] blur-xl opacity-0 group-focus-within/input-row:opacity-100 transition duration-1000" />
@@ -297,7 +323,7 @@ export function AICodeAssistantCard() {
           <div className="mt-4 flex items-center justify-between px-2">
             <div className="flex items-center gap-4">
               <p className="text-[9px] text-zinc-600 font-black uppercase tracking-[0.2em] flex items-center gap-2">
-                <Sparkles className="w-3 h-3 text-indigo-500/50" /> Engine: Gemini 1.5 Flash
+                <Sparkles className="w-3 h-3 text-indigo-500/50" /> Engine: Gemini 2.0 Flash
               </p>
               <div className="h-3 w-[1px] bg-white/5" />
               <p className="text-[9px] text-zinc-600 font-black uppercase tracking-[0.2em] flex items-center gap-2">
