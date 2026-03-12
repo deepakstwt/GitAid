@@ -21,11 +21,23 @@
 
 <div align="center">
 
-### 🚀 Project Overview
-![Project Overview](./screenshots/Project_Overview.jpeg)
+### 🏠 Landing Page
+![Landing Page](./screenshots/img1.jpeg)
 
-### 🎯 Dashboard  
-![Dashboard](./screenshots/Dashboard.jpeg)
+### ⚡ Capabilities
+![Capabilities](./screenshots/img2.jpeg)
+
+### 🔍 Semantic Search & AI Analysis
+![Semantic Search & AI Analysis](./screenshots/img3.jpeg)
+
+### 💡 Why GitAid
+![Why GitAid](./screenshots/img4.jpeg)
+
+### ⭐ Testimonials
+![Testimonials](./screenshots/img5.jpeg)
+
+### 🎯 Dashboard
+![Dashboard](./screenshots/img6.jpeg)
 
 </div>
 
