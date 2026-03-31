@@ -11,6 +11,7 @@ import {
   Trash2,
   AlertCircle,
   Sparkles,
+  X,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import useProject from '@/hooks/use-project';
@@ -39,7 +40,12 @@ const NAV_ITEMS = [
 ] as const;
 
 // ─── Component ──────────────────────────────────────────────────────────────
-export function AppSidebar() {
+interface AppSidebarProps {
+  isOpen?: boolean;
+  onClose?: () => void;
+}
+
+export function AppSidebar({ isOpen = false, onClose }: AppSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const { projects, projectId, setProjectId } = useProject();
@@ -54,6 +60,7 @@ export function AppSidebar() {
 
   const handleProjectSelect = (id: string) => {
     setProjectId(id);
+    onClose?.();
   };
 
   const deleteProject = api.project.deleteProject.useMutation({
@@ -77,10 +84,18 @@ export function AppSidebar() {
   };
 
   return (
-    <aside className="flex flex-col w-64 shrink-0 h-screen sticky top-0 bg-[#08080c]/80 backdrop-blur-2xl border-r border-white/5 overflow-y-auto z-40">
-
+    <aside
+      className={cn(
+        "flex flex-col w-64 shrink-0 h-screen bg-[#08080c]/95 backdrop-blur-2xl border-r border-white/5 overflow-y-auto z-40",
+        // Desktop: always visible, relative in flow
+        "lg:sticky lg:top-0 lg:translate-x-0",
+        // Mobile: fixed overlay, slides in/out
+        "fixed inset-y-0 left-0 transition-transform duration-300 ease-in-out",
+        isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+      )}
+    >
       {/* ── Brand ─────────────────────────────────────────────────────── */}
-      <div className="px-5 py-7 mb-2">
+      <div className="px-5 py-7 mb-2 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center flex-shrink-0">
             <GitBranch className="w-5 h-5 text-[#08080c]" />
@@ -89,6 +104,14 @@ export function AppSidebar() {
             GitAid
           </span>
         </div>
+        {/* Close button — only visible on mobile */}
+        <button
+          onClick={onClose}
+          className="lg:hidden p-1.5 rounded-lg text-zinc-500 hover:text-white hover:bg-white/5 transition-colors"
+          aria-label="Close menu"
+        >
+          <X className="w-4 h-4" />
+        </button>
       </div>
 
       {/* ── Nav ───────────────────────────────────────────────────────── */}
@@ -103,6 +126,7 @@ export function AppSidebar() {
             <Link
               key={href}
               href={href}
+              onClick={() => onClose?.()}
               className={cn(
                 'group relative flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200',
                 active

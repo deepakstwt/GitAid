@@ -137,9 +137,8 @@ const DashboardPage = () => {
     });
   };
 
-  const handleArchiveProject = (reason: string) => {
-    console.log('Archiving project with reason:', reason);
-    // TODO: Implement actual API call
+  const handleArchiveProject = (_reason: string) => {
+    setIsArchiveModalOpen(false);
   };
 
   const exportDataMutation = api.project.exportProjectData.useMutation({
@@ -213,10 +212,10 @@ const DashboardPage = () => {
   return (
     <>
       {/* ── Top project navbar ─────────────────────────────────────────── */}
-      <div className="sticky top-0 z-20 h-20 border-b border-white/5 bg-[#08080c]/80 backdrop-blur-xl flex items-center justify-between px-8 shrink-0 mb-6 rounded-b-3xl shadow-2xl shadow-black/40">
-        <div className="flex items-center gap-5 min-w-0">
+      <div className="sticky top-0 z-20 min-h-16 border-b border-white/5 bg-[#08080c]/80 backdrop-blur-xl flex items-center justify-between px-4 sm:px-8 shrink-0 mb-6 rounded-b-3xl shadow-2xl shadow-black/40 gap-3 py-3 lg:py-0 lg:h-20">
+        <div className="flex items-center gap-3 min-w-0">
           <div className="min-w-0">
-            <h1 className="text-lg font-bold text-white truncate tracking-tight">{project.name}</h1>
+            <h1 className="text-base sm:text-lg font-bold text-white truncate tracking-tight">{project.name}</h1>
             {project.githubUrl ? (
               <a
                 href={project.githubUrl}
@@ -224,7 +223,8 @@ const DashboardPage = () => {
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1.5 text-[10px] text-zinc-500 hover:text-white font-mono transition-colors uppercase tracking-widest"
               >
-                {project.githubUrl.replace('https://github.com/', '')}
+                <span className="hidden sm:inline">{project.githubUrl.replace('https://github.com/', '')}</span>
+                <span className="sm:hidden">GitHub</span>
                 <ExternalLink className="w-2.5 h-2.5" />
               </a>
             ) : (
@@ -233,12 +233,12 @@ const DashboardPage = () => {
           </div>
         </div>
 
-        <div className="flex items-center gap-4 shrink-0">
-          <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-[10px] text-zinc-300 font-bold uppercase tracking-widest">
-            <Users className="w-3.5 h-3.5 text-zinc-500" />
+        <div className="flex items-center gap-2 sm:gap-4 shrink-0">
+          <span className="inline-flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-[10px] text-zinc-300 font-bold uppercase tracking-widest">
+            <Users className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-zinc-500" />
             {teamMembersLoading ? '…' : teamMembers.length}
           </span>
-          <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-[10px] text-zinc-400 font-bold uppercase tracking-widest">
+          <span className="hidden sm:inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-[10px] text-zinc-400 font-bold uppercase tracking-widest">
             <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
             Active
           </span>
@@ -246,13 +246,13 @@ const DashboardPage = () => {
       </div>
 
       {/* ── Two-column body ────────────────────────────────────────────── */}
-      <div className="flex flex-col lg:flex-row gap-8 px-6 pb-20 items-start">
+      <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 px-3 sm:px-6 pb-20 items-start">
 
         {/* ── LEFT: main content column ─────────────────────────────── */}
         <div className="flex-1 min-w-0 space-y-6">
 
           {/* Category Tabs */}
-          <div className="flex items-center gap-1 p-1 bg-white/[0.02] border border-white/5 rounded-xl w-fit mb-6">
+          <div className="flex items-center gap-1 p-1 bg-white/[0.02] border border-white/5 rounded-xl w-full sm:w-fit mb-6 overflow-x-auto scrollbar-none">
             {[
               { id: 'activity', label: 'Stream', icon: Github },
               { id: 'ai', label: 'Context', icon: Cpu },
@@ -263,7 +263,7 @@ const DashboardPage = () => {
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as any)}
                 className={cn(
-                  "flex items-center gap-2 px-5 py-2 rounded-lg text-[11px] font-bold uppercase tracking-wider transition-all duration-300",
+                  "flex items-center gap-1.5 px-3 sm:px-5 py-2 rounded-lg text-[11px] font-bold uppercase tracking-wider transition-all duration-300 whitespace-nowrap",
                   activeTab === tab.id
                     ? "bg-white text-[#08080c] shadow-xl"
                     : "text-zinc-600 hover:text-zinc-400 hover:bg-white/[0.02]"

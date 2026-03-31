@@ -1,82 +1,8 @@
 import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
 import { z } from "zod";
-import { processRepositoryForRAG, queryRAG, getRAGStats, clearRAGData } from "@/server/lib/rag-pipeline";
 import { indexGithubRepo, queryRAGSystem } from "@/server/lib/github-rag-indexer";
 
 export const ragRouter = createTRPCRouter({
-  processRepository: protectedProcedure
-    .input(z.object({
-      projectId: z.string(),
-      githubUrl: z.string().url(),
-      githubToken: z.string().optional(),
-    }))
-    .mutation(async ({ input }) => {
-      return await processRepositoryForRAG(
-        input.projectId,
-        input.githubUrl,
-        input.githubToken
-      );
-    }),
-
-  query: protectedProcedure
-    .input(z.object({
-      projectId: z.string(),
-      question: z.string().min(1),
-      topK: z.number().min(1).max(20).default(5),
-    }))
-    .mutation(async ({ input }) => {
-      return await queryRAG(input.projectId, input.question, input.topK);
-    }),
-
-  getStats: protectedProcedure
-    .input(z.object({
-      projectId: z.string(),
-    }))
-    .query(async ({ input }) => {
-      return await getRAGStats(input.projectId);
-    }),
-
-  clearData: protectedProcedure
-    .input(z.object({
-      projectId: z.string(),
-    }))
-    .mutation(async ({ input }) => {
-      return await clearRAGData(input.projectId);
-    }),
-
-  getDocuments: protectedProcedure
-    .input(z.object({
-      projectId: z.string(),
-      limit: z.number().min(1).max(100).default(20),
-      offset: z.number().min(0).default(0),
-    }))
-    .query(async ({ input, ctx }) => {
-      const documents = await ctx.db.document.findMany({
-        where: { projectId: input.projectId },
-        select: {
-          id: true,
-          fileName: true,
-          filePath: true,
-          summary: true,
-          createdAt: true,
-          updatedAt: true,
-        },
-        orderBy: { fileName: 'asc' },
-        take: input.limit,
-        skip: input.offset,
-      });
-
-      const total = await ctx.db.document.count({
-        where: { projectId: input.projectId },
-      });
-
-      return {
-        documents,
-        total,
-        hasMore: total > input.offset + input.limit,
-      };
-    }),
-
   /**
    * Index a GitHub repository with PGVector embeddings
    */

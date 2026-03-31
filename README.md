@@ -100,8 +100,8 @@
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/yourusername/git-gud-manager.git
-   cd git-gud-manager
+   git clone https://github.com/yourusername/GitAid.git
+   cd GitAid
    ```
 
 2. **Install dependencies**
@@ -145,24 +145,25 @@
 ```
 GitAid/
 ├── frontend/
-│   ├── src/app/               # Next.js App Router
-│   ├── client/components/     # Reusable UI components
-│   ├── client/lib/            # Frontend utilities
-│   ├── client/hooks/          # React hooks
-│   ├── client/trpc/          # tRPC client setup
-│   ├── public/               # Static assets
-│   └── config/               # Frontend configuration
+│   ├── src/app/               # Next.js App Router (pages + layouts)
+│   │   ├── (auth)/            # Sign-in / Sign-up pages (Clerk)
+│   │   └── (protected)/       # Dashboard, QA, Create, OpenSource
+│   ├── client/components/     # Reusable React components
+│   ├── client/hooks/          # Custom React hooks
+│   ├── client/types/          # Shared TypeScript interfaces
+│   ├── client/trpc/           # tRPC client setup
+│   └── config/                # Prettier config
 ├── backend/
-│   ├── server/api/           # tRPC API routes
-│   ├── server/lib/           # Core business logic
-│   │   ├── ai.ts            # AI integration (Gemini)
-│   │   ├── github.ts        # GitHub API integration
-│   │   ├── embeddings.ts    # Vector embeddings
-│   │   ├── rag-pipeline.ts  # RAG implementation
-│   │   └── database.ts      # Database operations
-│   ├── prisma/              # Database schema & migrations
-│   └── scripts/             # Utility scripts
-└── README.md                # Project documentation
+│   ├── server/api/routers/    # tRPC routers (project, rag)
+│   ├── server/lib/            # Core business logic
+│   │   ├── ai.ts              # Gemini AI — commit summarization
+│   │   ├── embeddings.ts      # Vector embeddings + RAG answer generation
+│   │   ├── github.ts          # GitHub API — commits, diffs, polling
+│   │   ├── github-loader.ts   # LangChain GitHub repo loader
+│   │   └── github-rag-indexer.ts # PGVector indexing + semantic search
+│   └── prisma/                # Database schema & migrations
+└── scripts/
+    └── verify-gemini.mjs      # Dev utility: verify Gemini API key
 ```
 
 ### 🔑 **Core Technologies**
@@ -182,46 +183,15 @@ GitAid/
 
 ---
 
-## 🧪 Testing
-
-### **Test Structure**
-```bash
-tests/
-├── unit/                  # 26 unit tests
-├── integration/           # Integration tests
-├── utilities/             # Database utilities
-└── verification/          # System verification
-```
-
-### **Running Tests**
+## 🔍 Verify Setup
 
 ```bash
-# Run all tests
-npm run test:all
+# Verify your Gemini API key works
+node scripts/verify-gemini.mjs
 
-# Specific test categories
-npm run test:ai          # AI functionality tests
-npm run test:database    # Database connection tests
-
-# Utility commands
-npm run utility:check-summaries    # Check AI summary status
-npm run utility:view-db           # View database contents
-npm run utility:clear-summaries   # Clear AI summaries
-
-# Development utilities
-npm run db:studio        # Open Prisma Studio
-npm run verify:implementation     # System verification
+# Open Prisma Studio to inspect the database
+cd frontend && npm run db:studio
 ```
-
-### **Test Coverage**
-- ✅ **AI Integration**: Gemini API connection and fallbacks
-- ✅ **Database Operations**: CRUD operations and migrations
-- ✅ **GitHub Integration**: Repository loading and commit analysis
-- ✅ **RAG Pipeline**: Vector search and embeddings
-- ✅ **Authentication**: User management and permissions
-- ✅ **API Endpoints**: All tRPC procedures
-
----
 
 ---
 
@@ -250,20 +220,19 @@ npm run verify:implementation     # System verification
 
 2. **Make your changes**
    - Follow TypeScript best practices
-   - Add tests for new functionality
-   - Update documentation as needed
+   - Keep `lib/` for logic, `api/` for routing, `components/` for UI
 
-3. **Test your changes**
+3. **Validate your changes**
    ```bash
-   npm run test:all
+   cd frontend
    npm run typecheck
    npm run lint
    ```
 
 4. **Submit a pull request**
-   - Provide clear description
+   - Provide a clear description
    - Reference related issues
-   - Ensure all tests pass
+   - Ensure TypeScript and lint pass cleanly
 
 ---
 
@@ -281,19 +250,14 @@ npm run verify:implementation     # System verification
 
 ### **Database Setup**
 
-1. **Install pgvector extension**
+1. **Enable the pgvector extension** on your PostgreSQL instance (Neon/Supabase enable this automatically):
    ```sql
    CREATE EXTENSION IF NOT EXISTS vector;
    ```
 
-2. **Run setup script**
+2. **Push the schema** (creates all tables including `SourceCodeEmbedding` with the vector column):
    ```bash
-   psql -d your_database -f setup-pgvector.sql
-   ```
-
-3. **Verify installation**
-   ```bash
-   npm run verify:pgvector
+   cd frontend && npm run db:push
    ```
 
 ---
@@ -331,10 +295,8 @@ This project is licensed under the MIT License - see the [LICENSE](frontend/LICE
 
 ## 📞 Support
 
-- 📧 **Email**: support@git-gud-manager.com
-- 💬 **Discord**: [Join our community](https://discord.gg/git-gud-manager)
-- 📖 **Documentation**: [docs.git-gud-manager.com](https://docs.git-gud-manager.com)
-- 🐛 **Issues**: [GitHub Issues](https://github.com/yourusername/git-gud-manager/issues)
+- 🐛 **Issues**: [GitHub Issues](https://github.com/yourusername/GitAid/issues)
+- 💬 **Discussions**: GitHub Discussions Q&A
 
 ---
 

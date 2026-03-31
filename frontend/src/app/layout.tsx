@@ -7,6 +7,7 @@ import { ClerkProvider } from "@clerk/nextjs";
 import { Toaster } from "@/client/components/ui/sonner";
 import { cn } from "@/client/lib/utils";
 import { ThemeProvider } from "@/client/components/ThemeProvider";
+import { SplashScreen } from "@/client/components/SplashScreen";
 
 export const metadata: Metadata = {
   title: "GitAid - AI-Powered Git Management",
@@ -96,6 +97,7 @@ export default function RootLayout({
            * so auth pages (sign-in, sign-up) never pay that cost.
            */}
           <ThemeProvider>
+            <SplashScreen />
             {children}
             <Toaster theme="dark" />
           </ThemeProvider>

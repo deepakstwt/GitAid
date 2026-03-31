@@ -1,24 +1,14 @@
 "use client";
 
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Brain, FileText, MessageSquare, Save, User, Clock } from "lucide-react";
+import { Brain, FileText, Save, User } from "lucide-react";
 import { CodeReferences } from "./CodeReferencesSimple";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { format } from "date-fns";
-import { api } from "@/trpc/react";
 import { toast } from "sonner";
-
-interface FileReference {
-  fileName: string;
-  summary: string;
-  sourceCode: string;
-  similarity: number;
-}
+import { type FileReference } from "@/client/types";
 
 interface QuestionResultCardProps {
   question: string;
@@ -32,37 +22,13 @@ export function QuestionResultCard({
   question,
   answer,
   fileReferences,
-  projectId,
   onSaved
 }: QuestionResultCardProps) {
-  const [isSaving, setIsSaving] = useState(false);
-  
-  // TRPC mutation for saving the question
-  const queryMutation = api.rag.queryPGVector.useMutation({
-    onSuccess: () => {
-      toast.success("Question saved successfully");
-      if (onSaved) onSaved();
-    },
-    onError: (error) => {
-      toast.error("Failed to save question: " + error.message);
-    }
-  });
-
-  const handleSaveQuestion = async () => {
-    if (!projectId || !question.trim() || !answer.trim()) return;
-    
-    setIsSaving(true);
-    try {
-      await queryMutation.mutateAsync({
-        projectId,
-        question: question.trim(),
-        topK: 5
-      });
-    } catch (error: unknown) {
-      console.error('Error saving question:', error);
-    } finally {
-      setIsSaving(false);
-    }
+  // Q&A is already persisted by queryPGVector on the server.
+  // This button just acknowledges to the user that the result is saved.
+  const handleSaveQuestion = () => {
+    toast.success("Question saved to history");
+    if (onSaved) onSaved();
   };
 
   return (
@@ -85,10 +51,9 @@ export function QuestionResultCard({
             size="sm"
             className="flex items-center gap-2 bg-white text-[#08080c] hover:bg-zinc-200 border-none rounded-xl font-bold h-10 px-5"
             onClick={handleSaveQuestion}
-            disabled={isSaving}
           >
             <Save className="w-4 h-4" />
-            {isSaving ? "Saving..." : "Save Question"}
+            Save Question
           </Button>
         </div>
 

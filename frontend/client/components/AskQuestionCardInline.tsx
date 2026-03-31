@@ -16,13 +16,7 @@ const CodeReferences = dynamic(() => import("./CodeReferencesSimple").then((mod)
 const MarkdownRenderer = dynamic(() => import("./MarkdownRenderer"), { ssr: false });
 import { format } from "date-fns";
 import { useIsMobile } from "@/hooks/use-mobile";
-
-interface FileReference {
-  fileName: string;
-  summary: string;
-  sourceCode: string;
-  similarity: number;
-}
+import { type FileReference } from "@/client/types";
 
 interface AskQuestionCardInlineProps {
   onQuestionSaved?: () => void;
@@ -34,7 +28,7 @@ export function AskQuestionCardInline({ onQuestionSaved }: AskQuestionCardInline
   const [answer, setAnswer] = useState("");
   const [fileReferences, setFileReferences] = useState<FileReference[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
+
   const isMobile = useIsMobile();
 
   // Prevent body scrolling when modal is open
@@ -118,8 +112,6 @@ export function AskQuestionCardInline({ onQuestionSaved }: AskQuestionCardInline
     // Reset the form after saving
     setQuestion("");
     setIsDialogOpen(false);
-    setIsSaving(false);
-
     // Call the parent callback if provided
     if (onQuestionSaved) {
       onQuestionSaved();
@@ -222,10 +214,10 @@ export function AskQuestionCardInline({ onQuestionSaved }: AskQuestionCardInline
                 size="sm"
                 className="flex items-center gap-2 bg-white text-[#08080c] hover:bg-zinc-200 border-none rounded-xl font-bold"
                 onClick={handleSaveQuestion}
-                disabled={isSaving}
+
               >
                 <Save className="w-4 h-4" />
-                {isSaving ? "Saving..." : "Save Question"}
+                Save Question
               </Button>
             </div>
           </div>

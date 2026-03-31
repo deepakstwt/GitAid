@@ -592,7 +592,7 @@ export default async function Home() {
                     <span className="lp-notif-title">GitAid · Semantic Search</span>
                     <span className="lp-notif-time">3m ago</span>
                   </div>
-                  <div className="lp-notif-body">"How was auth refactored last month?" — 12 relevant commits found</div>
+                  <div className="lp-notif-body">&ldquo;How was auth refactored last month?&rdquo; — 12 relevant commits found</div>
                 </div>
               </div>
 
@@ -677,7 +677,7 @@ export default async function Home() {
                 <div className="lp-notif-icon-wrap"><Search size={18} color="#c084fc" /></div>
                 <div className="lp-notif-content">
                   <div className="lp-notif-row"><span className="lp-notif-title">GitAid · Semantic Search</span><span className="lp-notif-time">3m ago</span></div>
-                  <div className="lp-notif-body">"How was auth refactored last month?" — 12 relevant commits found</div>
+                  <div className="lp-notif-body">&ldquo;How was auth refactored last month?&rdquo; — 12 relevant commits found</div>
                 </div>
               </div>
 
@@ -737,7 +737,7 @@ export default async function Home() {
                 <div className="lp-testimonial-stars" aria-label="5 stars">
                   {[...Array(5)].map((_, i) => <span key={i}>★</span>)}
                 </div>
-                <p className="lp-testimonial-text">"{text}"</p>
+                <p className="lp-testimonial-text">&ldquo;{text}&rdquo;</p>
                 <div className="lp-testimonial-author">
                   <div className="lp-testimonial-avatar" style={{ background: bg, color: '#fff' }}>
                     {initials}

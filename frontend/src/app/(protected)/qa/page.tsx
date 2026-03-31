@@ -16,13 +16,7 @@ const AskQuestionCardInline = dynamic(() => import("@/components/AskQuestionCard
 const CodeReferences = dynamic(() => import("@/components/CodeReferencesSimple").then((mod) => mod.CodeReferences), { ssr: false });
 
 import Image from "next/image";
-
-interface FileReference {
-  fileName: string;
-  summary: string;
-  sourceCode: string;
-  similarity: number;
-}
+import { type FileReference } from "@/client/types";
 
 interface Question {
   id: string;
@@ -123,18 +117,18 @@ const QAPage = () => {
 
       {/* Questions List */}
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="relative group/title-icon">
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="relative group/title-icon shrink-0">
               <div className="absolute -inset-1 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-xl blur opacity-25 group-hover/title-icon:opacity-50 transition-opacity" />
               <div className="relative p-2 rounded-xl bg-zinc-900 border border-white/10 shadow-xl">
                 <MessageSquare className="h-5 w-5 text-indigo-400" />
               </div>
             </div>
-            <h1 className="text-2xl font-bold text-white tracking-tight drop-shadow-sm">
+            <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight drop-shadow-sm">
               Saved Questions
               {questions && (
-                <span className="text-sm font-bold tracking-normal text-indigo-400 ml-3 bg-indigo-500/10 px-3 py-1 rounded-full border border-indigo-500/20 relative top-[-2px]">
+                <span className="text-xs sm:text-sm font-bold tracking-normal text-indigo-400 ml-2 sm:ml-3 bg-indigo-500/10 px-2 sm:px-3 py-1 rounded-full border border-indigo-500/20 relative top-[-1px] sm:top-[-2px]">
                   {filteredQuestions.length}{searchQuery && ` of ${questions.length}`}
                 </span>
               )}
@@ -147,11 +141,11 @@ const QAPage = () => {
             }}
             variant="outline"
             size="sm"
-            className="flex items-center gap-2 bg-white/[0.03] border-white/10 text-zinc-300 hover:bg-white/10 hover:text-white rounded-xl h-10 px-4 transition-colors font-semibold"
+            className="flex items-center gap-2 bg-white/[0.03] border-white/10 text-zinc-300 hover:bg-white/10 hover:text-white rounded-xl h-10 px-4 transition-colors font-semibold shrink-0"
             disabled={isLoading}
           >
             <RefreshCcw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
-            Refresh
+            <span className="hidden sm:inline">Refresh</span>
           </Button>
         </div>
 
@@ -240,7 +234,7 @@ const QAPage = () => {
             {filteredQuestions.map((question, index) => (
               <div
                 key={question.id}
-                className="group relative flex items-start gap-5 bg-[#0A0A0B] hover:bg-[#0F0F11] text-card-foreground p-6 shadow-xl border border-white/5 hover:border-indigo-500/30 cursor-pointer transition-all duration-300 rounded-[1.5rem]"
+                className="group relative flex items-start gap-3 sm:gap-5 bg-[#0A0A0B] hover:bg-[#0F0F11] text-card-foreground p-4 sm:p-6 shadow-xl border border-white/5 hover:border-indigo-500/30 cursor-pointer transition-all duration-300 rounded-[1.5rem]"
                 onClick={() => handleQuestionClick(index)}
               >
                 {/* User Avatar */}
@@ -300,26 +294,26 @@ const QAPage = () => {
             aria-labelledby="question-detail-title"
             ref={modalRef}
           >
-            <div className="bg-[#08080c] text-white rounded-[2rem] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.6)] w-full max-w-7xl max-h-[92vh] flex flex-col overflow-hidden border border-white/5 transition-all duration-300 ease-in-out">
+            <div className="bg-[#08080c] text-white rounded-2xl sm:rounded-[2rem] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.6)] w-full max-w-7xl max-h-[94vh] flex flex-col overflow-hidden border border-white/5 transition-all duration-300 ease-in-out">
               {/* Header */}
-              <div className="bg-zinc-950/40 backdrop-blur-3xl p-8 border-b border-white/5 relative">
+              <div className="bg-zinc-950/40 backdrop-blur-3xl p-5 sm:p-8 border-b border-white/5 relative">
                 <button
                   onClick={handleDialogClose}
-                  className="absolute right-6 top-6 p-2 rounded-full bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white transition-all duration-200 shadow-lg focus:outline-none"
+                  className="absolute right-4 top-4 sm:right-6 sm:top-6 p-2 rounded-full bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white transition-all duration-200 shadow-lg focus:outline-none"
                   aria-label="Close dialog"
                   ref={closeButtonRef}
                 >
                   <XIcon className="h-5 w-5" />
                 </button>
 
-                <h2 id="question-detail-title" className="text-3xl font-bold text-white mb-8 pr-12 leading-tight tracking-tight">
+                <h2 id="question-detail-title" className="text-xl sm:text-2xl lg:text-3xl font-bold text-white mb-5 sm:mb-8 pr-10 leading-tight tracking-tight">
                   {selectedQuestion.text}
                 </h2>
 
-                <div className="flex items-center gap-5">
-                  <div className="flex items-center gap-4 text-[10px] font-black uppercase tracking-[0.2em]">
-                    <div className="w-10 h-10 bg-white/5 border border-white/10 rounded-xl flex items-center justify-center shadow-lg">
-                      <User className="h-5 w-5 text-zinc-400" />
+                <div className="flex items-center gap-3 sm:gap-5">
+                  <div className="flex items-center gap-3 sm:gap-4 text-[10px] font-black uppercase tracking-[0.2em]">
+                    <div className="w-9 h-9 sm:w-10 sm:h-10 bg-white/5 border border-white/10 rounded-xl flex items-center justify-center shadow-lg">
+                      <User className="h-4 w-4 sm:h-5 sm:w-5 text-zinc-400" />
                     </div>
                     <div className="flex flex-col gap-1">
                       <span className="text-zinc-300">Originating Member</span>
@@ -332,8 +326,8 @@ const QAPage = () => {
               <div className="flex-1 overflow-hidden bg-[#0A0A0B] relative">
                 <div className="absolute inset-0 bg-grid-white/[0.01] pointer-events-none" />
                 <div
-                  className={`grid ${isMobile ? "grid-cols-1" : selectedQuestion.fileReferences && Array.isArray(selectedQuestion.fileReferences) && selectedQuestion.fileReferences.length > 0 ? "grid-cols-5" : "grid-cols-1"} gap-8 p-10 h-full overflow-y-auto custom-scrollbar transition-all duration-300 relative z-10`}
-                  style={{ maxHeight: 'calc(92vh - 200px)' }}
+                  className={`grid ${isMobile ? "grid-cols-1" : selectedQuestion.fileReferences && Array.isArray(selectedQuestion.fileReferences) && selectedQuestion.fileReferences.length > 0 ? "grid-cols-5" : "grid-cols-1"} gap-5 sm:gap-8 p-5 sm:p-8 lg:p-10 h-full overflow-y-auto custom-scrollbar transition-all duration-300 relative z-10`}
+                  style={{ maxHeight: 'calc(94vh - 200px)' }}
                 >
                   {/* Answer Section - Left Side (3/5 width) */}
                   <div className={`flex flex-col ${selectedQuestion.fileReferences && Array.isArray(selectedQuestion.fileReferences) && selectedQuestion.fileReferences.length > 0 ? "col-span-3" : "col-span-1"}`}>

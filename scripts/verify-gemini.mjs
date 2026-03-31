@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Verify Gemini API key from backend/.env
- * Run from frontend: node ../scripts/verify-gemini.mjs
+ * Run from repo root: node scripts/verify-gemini.mjs
  */
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -32,12 +32,12 @@ if (!key || key.trim() === '') {
 }
 
 console.log('✓ GEMINI_API_KEY found:', key.substring(0, 6) + '...' + key.slice(-4));
-console.log('  Calling Gemini API (gemini-1.5-flash)...');
+console.log('  Calling Gemini API (gemini-2.0-flash)...');
 
 try {
   const { GoogleGenerativeAI } = await import('@google/generative-ai');
   const genAI = new GoogleGenerativeAI(key.trim());
-  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+  const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
   const result = await model.generateContent('Say "Hello" in one word.');
   const text = result.response.text();
   console.log('✓ Gemini responded:', text?.trim() || '(empty)');
