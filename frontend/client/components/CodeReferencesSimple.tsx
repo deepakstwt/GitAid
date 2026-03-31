@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { FileText, Code, Zap, Search, FileCode, Copy, Check } from "lucide-react";
 import dynamic from "next/dynamic";
+import { type FileReference } from "@/client/types";
 
 const SyntaxHighlighter = dynamic(
   async () => {
@@ -15,13 +16,6 @@ const SyntaxHighlighter = dynamic(
   },
   { ssr: false }
 );
-
-interface FileReference {
-  fileName: string;
-  summary: string;
-  sourceCode: string;
-  similarity: number;
-}
 
 interface CodeReferencesProps {
   fileReferences: FileReference[];

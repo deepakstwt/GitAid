@@ -51,9 +51,7 @@ export async function indexGithubRepo(
     // Clear existing rows (including ghost rows with NULL embeddings from previous failed runs)
     // before re-indexing. Without this, the @@unique([projectId, fileName]) constraint
     // would throw on every re-index attempt.
-    console.log('🗑️ Clearing existing embeddings for project before re-indexing...');
     await db.sourceCodeEmbedding.deleteMany({ where: { projectId } });
-    console.log('✅ Cleared existing embeddings.');
 
     // Step 2: Filter relevant files
     const relevantDocs = filterRelevantDocuments(docs);
@@ -72,10 +70,9 @@ export async function indexGithubRepo(
       const batchResults = await Promise.allSettled(
         batch.map(async (doc, i) => {
           const fileName = extractFileName(doc);
-          console.log(`  Processing file ${batchStart + i + 1}/${relevantDocs.length}: ${fileName}`);
           try {
-            const summary = await summarizeCode(doc);
-            const embedding = await generateEmbedding(summary);
+            const summary = await summarizeDocument(doc.pageContent, fileName);
+            const embedding = await getEmbeddings(summary);
             return {
               success: true as const,
               fileName,
@@ -106,14 +103,10 @@ export async function indexGithubRepo(
       }
     }
 
-    const processResults = allProcessResults;
-
-    // Step 5: Store in database
-    console.log('💾 Storing results in database...');
     let successCount = 0;
 
-    for (let i = 0; i < processResults.length; i++) {
-      const result = processResults[i];
+    for (let i = 0; i < allProcessResults.length; i++) {
+      const result = allProcessResults[i];
       
       if (!result) continue;
       
@@ -148,7 +141,6 @@ export async function indexGithubRepo(
             record.id
           );
 
-          console.log(`Stored embedding for: ${fileName}`);
           successCount++;
         } catch (dbError) {
           console.error(`Database error for ${fileName}:`, dbError);
@@ -169,8 +161,7 @@ export async function indexGithubRepo(
       results.message = 'All files failed to process. For private repos, add a GitHub token in project settings.';
     }
 
-    console.log(`GitHub RAG indexing completed`);
-    console.log(`Results: ${successCount} processed, ${results.skippedCount} skipped, ${results.errors.length} errors`);
+    console.log(`RAG indexing complete: ${successCount} processed, ${results.skippedCount} skipped, ${results.errors.length} errors`);
 
     return results;
   } catch (error) {
@@ -178,29 +169,6 @@ export async function indexGithubRepo(
     results.errors.push(`Fatal error: ${error instanceof Error ? error.message : 'Unknown error'}`);
     return results;
   }
-}
-
-/**
- * Summarize code using Gemini AI
- * @param doc - Document containing code
- * @returns Promise<string> - Summary of the code
- */
-async function summarizeCode(doc: Document): Promise<string> {
-  const fileName = extractFileName(doc);
-  const pageContent = doc.pageContent;
-  
-  // Use the existing summarizeDocument function
-  return await summarizeDocument(pageContent, fileName);
-}
-
-/**
- * Generate embedding for text using Gemini
- * @param text - Text to generate embedding for
- * @returns Promise<number[]> - Array of embedding values (768 dimensions)
- */
-async function generateEmbedding(text: string): Promise<number[]> {
-  // Use the existing getEmbeddings function
-  return await getEmbeddings(text);
 }
 
 /**
@@ -281,7 +249,7 @@ export async function queryRAGSystem(
   
   try {
     // Step 1: Generate embedding for the question
-    const questionEmbedding = await generateEmbedding(question);
+    const questionEmbedding = await getEmbeddings(question);
     // Inline vector in SQL: Prisma cannot serialize vector as a bound param (error: "Couldn't serialize value")
     const vectorStr = '[' + questionEmbedding.join(',') + ']';
 

@@ -138,8 +138,6 @@ Answer:
   }
 }
 
-const FALLBACK_EMBEDDING_DIMENSION = 768;
-
 function generateDocumentFallbackSummary(content: string, fileName?: string): string {
   const lines = content.split('\n');
   const totalLines = lines.length;
